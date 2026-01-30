@@ -11,7 +11,6 @@ from arkparse.saves.save_context import SaveContext
 from arkparse.utils import TEMP_FILES_DIR
 
 class SaveConnection:
-    parsed_objects: Dict[uuid.UUID, ArkGameObject] = {}
 
     name_offset = 0
     name_count = 0
@@ -24,6 +23,7 @@ class SaveConnection:
 
         # create temp copy of file
         temp_save_path = TEMP_FILES_DIR / (str(uuid.uuid4()) + ".ark")
+        self.parsed_objects: Dict[uuid.UUID, ArkGameObject] = {}
 
         if path is not None:
             with open(path, 'rb') as file:
@@ -275,7 +275,14 @@ class SaveConnection:
 
         if actor_transforms:
             byte_sequence = SaveConnection.uuid_to_byte_array(uuid)
+            ArkSaveLogger.save_log(f"Modifying actor transform for {uuid} ...")
             positions = actor_transforms.find_byte_sequence(byte_sequence, adjust_offset=0)
+            ArkSaveLogger.save_log(f"Found positions: {positions}")
+            if len(positions) > 1:
+                ArkSaveLogger.warning_log(f"Multiple actor transforms found for {uuid}, modifying the first one.")
+            if len(positions) == 0:
+                ArkSaveLogger.error_log(f"No actor transform found for {uuid}, cannot modify.")
+                return
             actor_transforms.set_position(positions[0])
             actor_transforms.replace_bytes(byte_sequence + binary_data)
 

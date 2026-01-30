@@ -120,7 +120,7 @@ class Saddles:
                titanosaur_platform, beelzebufo, trike, carbo, tuso, yuty, basilisk, cave_wolf,
                karkinos, mole_rat, rock_drake, rock_drake_tek, camel, mantis, moth, rock_golem,
                thorny_dragon, bison, deinotherium, dreadnoughtus, maelizard, gacha, gas_bags,
-               snow_owl, ravager, managarmr, velonosaur]
+               snow_owl, ravager, managarmr, velonosaur, helicoprion]
     
 class Hazard:
     boots: str = "/Game/Aberration/CoreBlueprints/Items/Armor/HazardSuit/PrimalItemArmor_HazardSuitBoots.PrimalItemArmor_HazardSuitBoots_C"

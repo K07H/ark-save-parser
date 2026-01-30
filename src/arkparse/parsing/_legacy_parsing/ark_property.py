@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 from arkparse.logging import ArkSaveLogger
 
+
 from .struct.ark_vector import ArkVector
 from .struct.ark_unique_net_id_repl import ArkUniqueNetIdRepl
 from .struct.ark_vector_bool_pair import ArkVectorBoolPair
@@ -21,6 +22,7 @@ from arkparse.parsing.struct.ark_linear_color import ArkLinearColor
 from arkparse.parsing.struct.ark_quat import ArkQuat
 from arkparse.parsing.struct.ark_rotator import ArkRotator
 from arkparse.parsing.struct.object_reference import ObjectReference
+from arkparse.parsing.struct.ark_tribe_rank_group import ArkTribeRankGroup
 from arkparse.parsing.ark_set import ArkSet
 
 T = TypeVar('T')
@@ -223,6 +225,8 @@ class ArkProperty:
                 p = ArkItemNetId(byte_buffer)
             elif ark_struct_type == ArkStructType.ArkDinoAncestor:
                 p = ArkDinoAncestorEntry(byte_buffer)
+            elif ark_struct_type == ArkStructType.ArkTribeRankGroup:
+                p = ArkTribeRankGroup(byte_buffer)
             elif ark_struct_type == None:
                 return None
             elif in_array:

@@ -138,6 +138,30 @@ class BaseValueParser(BinaryReaderBase):
         value = self.read_int()
         self.position = current_position
         return value
+
+    def peek_byte(self) -> int:
+        current_position = self.position
+        value = self.read_byte()
+        self.position = current_position
+        return value
+    
+    def peek_u16(self) -> int:
+        current_position = self.position
+        value = self.read_uint16()
+        self.position = current_position
+        return value
+    
+    def peek_byte(self) -> int:
+        current_position = self.position
+        value = self.read_byte()
+        self.position = current_position
+        return value
+    
+    def peek_u16(self) -> int:
+        current_position = self.position
+        value = self.read_uint16()
+        self.position = current_position
+        return value
     
     def read_name(self, default=None, is_peek=False) -> str:
         if not self.save_context.has_name_table():

@@ -140,11 +140,13 @@ class StructureApi:
         structures = self.get_all(config)
         result = {}
 
+        ArkSaveLogger.api_log(f"Getting structures at location {coords} on map {map.name} within radius {radius}")
+
         for key, obj in structures.items():
             obj: Structure = obj
             if obj.location is None:
                 continue
-
+            
             if obj.location.is_at_map_coordinate(map, coords, tolerance=radius):
                 result[key] = obj
 
@@ -153,13 +155,16 @@ class StructureApi:
     def remove_at_location(self, map: ArkMap, coords: MapCoords, radius: float = 0.3, owner_tribe_id: int = None, owner_tribe_name: str = None):
         structures = self.get_at_location(map, coords, radius)
         
-        removed = 0
+        removed = []
         for uuid, obj in structures.items():
             if (owner_tribe_id is None and owner_tribe_name is None) or obj.owner.tribe_id == owner_tribe_id or obj.owner.tribe_name == owner_tribe_name:
                 self.save.remove_obj_from_db(uuid)
-                removed += 1
+                removed.append(uuid)
+                self.parsed_structures.pop(uuid, None)
 
-        ArkSaveLogger.api_log(f"Removed {removed} structures at location {coords} on map {map.name}")
+        ArkSaveLogger.api_log(f"Removed {len(removed)} structures at location {coords} on map {map.name}")
+
+        return removed
 
     def get_owned_by(self, owner: ObjectOwner = None, owner_tribe_id: int = None, owner_tribe_name: str = None) -> Dict[UUID, Union[Structure, StructureWithInventory]]:
         result = {}

@@ -7,7 +7,7 @@ from enum import Enum
 if TYPE_CHECKING:
     from arkparse.parsing import ArkBinaryParser
 
-from arkparse.utils.temp_files import read_config_file, write_config_file, TEMP_FILES_DIR
+from arkparse.utils.tm_files import read_config_file, write_config_file, TEMP_FILES_DIR
 
 class ArkSaveLogger:
     class LogTypes(Enum):

@@ -318,6 +318,7 @@ class Dinos:
     megalania = "/Game/PrimalEarth/Dinos/Megalania/Megalania_Character_BP.Megalania_Character_BP_C"
     megalodon = "/Game/PrimalEarth/Dinos/Megalodon/Megalodon_Character_BP.Megalodon_Character_BP_C"
     megalosaurus = "/Game/PrimalEarth/Dinos/Megalosaurus/Megalosaurus_Character_BP.Megalosaurus_Character_BP_C"
+    megaraptor = "/Game/ASA/Dinos/Megaraptor/ValMegaraptor_Character_BP.ValMegaraptor_Character_BP_C"
     megatherium = "/Game/PrimalEarth/Dinos/Megatherium/Megatherium_Character_BP.Megatherium_Character_BP_C"
     mosasaurus = "/Game/PrimalEarth/Dinos/Mosasaurus/Mosa_Character_BP.Mosa_Character_BP_C"
     moschops = "/Game/PrimalEarth/Dinos/Moschops/Moschops_Character_BP.Moschops_Character_BP_C"
@@ -393,15 +394,15 @@ class Dinos:
         giganotosaurus, hyaenodon, iguanodon,
         kairuku, kaprosuchus, kentrosaurus,
         liopleurodon, lystrosaurus,
-        mammoth, manta,megalania, megalodon,megalosaurus, 
-        megatherium,mosasaurus, moschops,oviraptor, pachy,
-        pachyrhinosaurus, parasaur,paraceratherium, pegomastax,
-        phiomia, plesiosaur,procoptodon, purlovia,raptor, rex,
-        sabertooth, sarco,brontosaurus, pulmonoscorpius,ovis, 
-        araneo,baby_araneo , spino ,megaloceros , terrorBird ,
-        therizinosaurus , thylacoleo ,beelzebufo , trike ,
-        troodon , carbonemys ,tusoteuthis , woolly_rhino ,
-        titanosaur , morellatops ,mantis , rock_golem ,thorny_dragon,
+        mammoth, manta, megalania, megalodon, megalosaurus, megaraptor, 
+        megatherium, mosasaurus, moschops, oviraptor, pachy,
+        pachyrhinosaurus, parasaur, paraceratherium, pegomastax,
+        phiomia, plesiosaur, procoptodon, purlovia,raptor, rex,
+        sabertooth, sarco, brontosaurus, pulmonoscorpius, ovis, 
+        araneo, baby_araneo, spino, megaloceros, terrorBird,
+        therizinosaurus, thylacoleo, beelzebufo, trike,
+        troodon, carbonemys, tusoteuthis, woolly_rhino,
+        titanosaur, morellatops, mantis, rock_golem, thorny_dragon,
         dreadnoughtus, maelizard, shastasaurus, gacha, gasbag,
         managarmr, tek_raptor, tek_rex, tek_stego,
         velonosaur, yutyrannus, tek_parasaur, queen_bee,
