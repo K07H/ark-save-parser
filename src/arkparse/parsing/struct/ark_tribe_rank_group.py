@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+import json
 
 if TYPE_CHECKING:
     from ..ark_binary_parser import ArkBinaryParser
 
 from arkparse.logging import ArkSaveLogger
+from arkparse.utils.json_utils import DefaultJsonEncoder
 
 @dataclass
 class ArkTribeRankGroup:
@@ -73,3 +75,38 @@ class ArkTribeRankGroup:
 
     def __str__(self) -> str:
         return f"group_name:{self.rank_group_name} group_rank:{self.rank_group_rank}"
+    
+    def to_json_obj(self):
+        return {
+            "name": self.name,
+            "rank": self.rank,
+            "inventory_rank": self.inventory_rank,
+            "structure_activation_rank": self.structure_activation_rank,
+            "new_structure_activation_rank": self.new_structure_activation_rank,
+            "new_structure_inventory_rank": self.new_structure_inventory_rank,
+            "pet_order_rank": self.pet_order_rank,
+            "pet_riding_rank": self.pet_riding_rank,
+            "invite_to_group_rank": self.invite_to_group_rank,
+            "max_promotion_group_rank": self.max_promotion_group_rank,
+            "max_demotion_group_rank": self.max_demotion_group_rank,
+            "max_banishment_group_rank": self.max_banishment_group_rank,
+            "num_invites_remaining": self.num_invites_remaining,
+            "prevent_structure_demolish": self.prevent_structure_demolish,
+            "prevent_structure_attachment": self.prevent_structure_attachment,
+            "prevent_structure_build_in_range": self.prevent_structure_build_in_range,
+            "prevent_unclaiming": self.prevent_unclaiming,
+            "allow_invites": self.allow_invites,
+            "limit_invites": self.limit_invites,
+            "allow_demotions": self.allow_demotions,
+            "allow_promotions": self.allow_promotions,
+            "allow_banishments": self.allow_banishments,
+            "prevent_wireless_crafting": self.prevent_wireless_crafting,
+            "teleport_members_rank": self.teleport_members_rank,
+            "teleport_dinos_rank": self.teleport_dinos_rank,
+            "is_default_rank": self.is_default_rank,
+            "allow_ping": self.allow_ping,
+            "allow_rally_point": self.allow_rally_point
+        }
+    
+    def to_json_str(self):
+        return json.dumps(self.to_json_obj(), default=lambda o: o.to_json_obj() if hasattr(o, 'to_json_obj') else None, indent=4, cls=DefaultJsonEncoder)

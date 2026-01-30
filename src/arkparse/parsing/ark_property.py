@@ -33,12 +33,12 @@ from arkparse.parsing.struct.ark_custom_item_data import ArkCustomItemData
 from arkparse.parsing.struct.ark_painting_key_value import ArkPaintingKeyValue
 from arkparse.parsing.struct.ark_dino_order_id import ArkDinoOrderID
 from arkparse.parsing.struct.ark_tribe_alliance import ArkTribeAlliance
+from arkparse.parsing.struct.ark_tribe_rank_group import ArkTribeRankGroup
 
 from arkparse.parsing.ark_property_container import ArkPropertyContainer
 from arkparse.parsing.ark_set import ArkSet
 
 from .ark_value_type import ArkValueType
-from .struct.ark_tribe_rank_group import ArkTribeRankGroup
 from ..enums.ark_enum import ArkEnumValue
 
 UNSUPPORTED_STRUCTS: List[str] = []

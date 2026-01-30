@@ -65,7 +65,11 @@ class ArkArchive:
             if i + 1 < len(self.objects):
                 next_object_index = self.objects[i + 1].properties_offset
             
-            obj.read_properties(self.data, propertyClass, next_object_index)
+            try:
+                obj.read_properties(self.data, propertyClass, next_object_index)
+            except Exception as e:
+                ArkSaveLogger.error_log(f"Error reading properties for object \'{obj.class_name}\' at {self.data.get_position()}: {e}")
+                self.data.structured_print()
             ArkSaveLogger.exit_struct()
 
         ArkSaveLogger.exit_struct()

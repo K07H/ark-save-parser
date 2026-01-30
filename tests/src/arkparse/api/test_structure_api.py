@@ -9,7 +9,7 @@ from arkparse.enums import ArkMap
 def structures_per_map(map: ArkMap) -> int:
     """ Fixture to provide the expected number of dinos for each map. """
     strct = {
-        ArkMap.RAGNAROK: 54696,
+        ArkMap.RAGNAROK: 54838,
         ArkMap.ABERRATION: 22937,
         ArkMap.EXTINCTION: 62135,
         ArkMap.ASTRAEOS: 130372,

@@ -5,6 +5,8 @@ from arkparse.parsing.struct.ark_color import ArkColor
 from arkparse.parsing.struct.ark_linear_color import ArkLinearColor
 from arkparse.parsing.struct.ark_quat import ArkQuat
 from arkparse.parsing.struct.ark_rotator import ArkRotator
+from arkparse.parsing.struct.ark_tribe_rank_group import ArkTribeRankGroup
+
 from .ark_vector import ArkVector
 from .ark_unique_net_id_repl import ArkUniqueNetIdRepl
 from .ark_vector_bool_pair import ArkVectorBoolPair
@@ -25,6 +27,7 @@ class ArkStructType(Enum):
     MyPersistentBuffDatas = "MyPersistentBuffDatas"
     ItemNetId = "ItemNetID"
     ArkDinoAncestor = "DinoAncestorsEntry"
+    ArkTribeRankGroup = "TribeRankGroup"
 
 
     # Static constructor mapping for ArkStructType
@@ -51,6 +54,7 @@ class ArkStructType(Enum):
             "MyPersistentBuffDatas": lambda data: ArkMyPersistentBuffDatas(data),
             "ItemNetID": lambda data: ArkItemNetId(data),
             "DinoAncestorsEntry": lambda data: ArkDinoAncestorEntry(data),
+            "TribeRankGroup": lambda data: ArkTribeRankGroup(data),
         }
         self.constructor = _constructors.get(type_name)
 

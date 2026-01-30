@@ -33,3 +33,10 @@ largest_pedigree = largest
 
 largest_pedigree.visualize_as_html(f"largest_pedigree_{largest_pedigree.dino_type}.html", largest_pedigree.dino_type)
 largest_pedigree.print_tree()
+
+count = 0
+for pedigree in pedigrees:
+    if pedigree.mixed_ownership:
+        print(f"Mixed ownership pedigree found for {pedigree.dino_type}, bottom_ids: {[str(dino.id_) for dino in pedigree.bottom_entries]}")
+        pedigree.visualize_as_html(f"mixed_ownership_pedigree_{pedigree.dino_type}_{count}.html", pedigree.dino_type)
+        count += 1

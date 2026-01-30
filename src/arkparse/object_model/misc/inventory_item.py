@@ -59,6 +59,8 @@ class InventoryItem(ParsedObjectBase):
         self.owner_inv_uuid = inv_uuid
         self.binary.byte_buffer = self.binary.byte_buffer.replace(old_id.bytes, inv_uuid.bytes)
 
+        self.update_binary()
+
     def to_string(self, name = "InventoryItem"):
         return f"{name}({self.get_short_name()}, quantity={self.quantity})"
 

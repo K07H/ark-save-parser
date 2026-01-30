@@ -15,7 +15,7 @@ class BaseValueValidator(ByteOperator):
         read = self.read_string()
         if read != s:
             ArkSaveLogger.open_hex_view()
-            raise Exception(f"Expected {hex(s)} but got {hex(read)} at position {pos}")
+            raise Exception(f"Expected {s} but got {read} at position {pos}")
         
     def validate_uint64(self, u64):
         pos = self.position

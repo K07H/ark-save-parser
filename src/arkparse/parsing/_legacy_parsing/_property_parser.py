@@ -16,7 +16,7 @@ class PropertyParser(BaseValueValidator):
         self.validate_name(property_name)
         self.validate_name("BoolProperty")
         self.validate_uint64(0)
-        value = self.read_boolean()
+        value = self.read_uint16() != 0
         return value
 
     def parse_uint32_property(self, property_name: str) -> int:
@@ -50,3 +50,20 @@ class PropertyParser(BaseValueValidator):
         self.validate_uint64(0)
         value = self.read_string()
         return value
+    
+    def parse_byte_property(self, property_name: str) -> int:
+        self.validate_name(property_name)
+        self.validate_name("ByteProperty")
+        self.read_uint32()
+        self.read_uint32()
+        enum_name = self.read_name()
+
+        if enum_name == "None":
+            self.read_byte()
+            value = self.read_byte()
+            return value
+        else:
+            self.read_byte()
+            self.read_name()
+            return 0
+        

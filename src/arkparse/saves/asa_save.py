@@ -15,11 +15,12 @@ from .save_context import SaveContext
 
 class AsaSave:
     # Populate manually if constructor parameter use_connection is False
-    parsed_objects: Dict[uuid.UUID, ArkGameObject] = {}
+    
 
     def __init__(self, path: Path = None, contents: bytes = None, read_only: bool = False, use_connection: bool = True):
 
         self.save_context = SaveContext()
+        self.parsed_objects: Dict[uuid.UUID, ArkGameObject] = {}
 
         # Populate manually if constructor parameter use_connection is False
         self.custom_value_GameModeCustomBytes: Optional['ArkBinaryParser'] = None
@@ -136,9 +137,9 @@ class AsaSave:
         ArkSaveLogger.open_hex_view(True)
         return None
 
-    def add_name_to_name_table(self, name: str):
+    def add_name_to_name_table(self, name: str, id: Optional[int] = None):
         if self.save_connection is not None:
-            self.save_connection.add_name_to_name_table(name)
+            self.save_connection.add_name_to_name_table(name, id)
 
     def get_parser_for_game_object(self, obj_uuid: uuid.UUID) -> Optional[ArkBinaryParser]:
         if self.game_obj_binaries is not None and obj_uuid in self.game_obj_binaries:
