@@ -27,6 +27,23 @@ class PropertyParser(BaseValueValidator):
         value = self.read_uint32()
         return value
 
+    def parse_byte_property(self, property_name: str) -> int:
+        self.validate_string(property_name)
+        self.validate_string("ByteProperty")
+        present = self.read_uint32() != 1
+
+        if present:
+            is_pos = self.read_byte() == 1
+            if is_pos:
+                pos = self.read_uint32()
+            value = self.read_byte()
+            return value
+        else:
+            self.validate_uint32(0)
+            self.validate_string("None")
+            self.validate_uint16(0)
+            return 0
+
     def parse_int32_property(self, property_name: str) -> int:
         self.validate_name(property_name)
         self.validate_name("IntProperty")

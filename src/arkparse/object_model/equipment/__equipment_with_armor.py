@@ -7,6 +7,8 @@ from arkparse.logging import ArkSaveLogger
 
 from arkparse.classes.equipment import Armor as ArmorBps
 from arkparse.classes.equipment import Saddles as SaddleBps
+from arkparse.classes.equipment import Mek as MekBps
+from arkparse.classes.equipment import ArmaDoggoGear as Arma
 
 from .__equipment_with_durability import EquipmentWithDurability
 from ...utils.json_utils import DefaultJsonEncoder
@@ -50,7 +52,7 @@ class EquipmentWithArmor(EquipmentWithDurability):
                     SaddleBps.rock_drake_tek]:
             return 45
         elif bp in [SaddleBps.paracer, SaddleBps.diplodocus, SaddleBps.bronto, SaddleBps.paracer_platform,
-                    SaddleBps.archelon, SaddleBps.carbo]:
+                    SaddleBps.archelon, SaddleBps.carbo, MekBps.shield] or bp in Arma.all_bps:
             return 20
         elif bp == SaddleBps.titanosaur_platform:
             return 1

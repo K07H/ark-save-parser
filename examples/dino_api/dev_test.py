@@ -21,30 +21,15 @@ save_path = Path.cwd() / 'Ragnarok_WP.ark'              # or use a local save fi
 save = AsaSave(save_path)                               # load the save file
 dino_api = DinoApi(save)                                # create a DinoApi object
 
-dinos: Dict[UUID, TamedDino] = dino_api.get_all_filtered(tamed=True, level_lower_bound=1000)           # only consider tamed dinos
+dinos: Dict[UUID, TamedDino] = dino_api.get_all_filtered(tamed=True, level_lower_bound=150)           # only consider tamed dinos
 
+count = 0
 for dino in dinos.values():                  # iterate over all dinos
     ArkSaveLogger.info_log(f"{dino.owner}, {dino.tamed_name}, {dino.location} ({dino.location.as_map_coords(ArkMap.RAGNAROK)})")  # print owner, name, species, level, and location
     name = dino.tamed_name if dino.tamed_name else "Unknown"
-    create_folder(name)  # create a folder for the tamed dino if it does not exist
-    dino.store_binary(BASE_STORAGE_PATH / name)
+    count += 1
 
-dino: TamedDino = list(dinos.values())[0]
-ArkSaveLogger.info_log("Binary:")
-dino.binary.structured_print()
-ArkSaveLogger.info_log(f"Props:")
-dino.object.print_properties()
-ArkSaveLogger.info_log(f"Stats:")
-dino.stats.object.print_properties()
+    print(dino.stats.stat_values.to_string_all())
 
-at = save.save_context.get_actor_transform(dino.object.uuid)
-if at:
-    ArkSaveLogger.info_log(f"Actor Transform for {dino.tamed_name}: {at}")
-else:
-    ArkSaveLogger.info_log(f"No Actor Transform found for {dino.tamed_name}")
-
-new_loc = MapCoords(77.77, 77.77).as_actor_transform(ArkMap.RAGNAROK)
-dino.set_location(new_loc, save)
-dino.binary.structured_print()
-new_vector = dino.object.get_property_value("SavedBaseWorldLocation")
-ArkSaveLogger.info_log(ActorTransform(vector=new_vector).as_map_coords(ArkMap.RAGNAROK))
+    if count > 20:
+        break

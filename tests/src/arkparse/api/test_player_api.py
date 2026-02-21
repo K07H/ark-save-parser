@@ -157,12 +157,26 @@ def test_get_player_xp(player_api: PlayerApi, test_player):
     )
 
 def test_non_use_store(base_save_path):
-    save_path = base_save_path / "set_2" / "TheIsland_WP" / "TheIsland_WP.ark"
+    save_path = base_save_path / "set_3" / "TheIsland_WP" / "TheIsland_WP.ark"
     save = AsaSave(save_path)
     player_api = PlayerApi(save)
     
     print(f"Total players: {len(player_api.players)}")
     print(f"Total tribes: {len(player_api.tribes)}")
 
-    assert len(player_api.players) == 1222, f"Expected 1222 players, got {len(player_api.players)}"
-    assert len(player_api.tribes) == 387, f"Expected 387 tribes, got {len(player_api.tribes)}"
+    assert len(player_api.players) == 80, f"Expected 80 players, got {len(player_api.players)}"
+    assert len(player_api.tribes) == 84, f"Expected 84 tribes, got {len(player_api.tribes)}"
+
+def test_cluster_data_parsing(base_save_path, ragnarok_save):
+    cluster_data_dir = base_save_path / "cluster_data"
+
+    p_api = PlayerApi(ragnarok_save, cluster_data_dir=cluster_data_dir)
+    print(f"Total players: {len(p_api.players)}")
+
+    assert len(p_api.get_players_with_cluster_data()) == 2, f"Expected 2 players with cluster data, got {len(p_api.get_players_with_cluster_data())}"
+    print(p_api.save.save_dir)
+    p_api_no_dir = PlayerApi(ragnarok_save)
+    print(f"Total players: {len(p_api_no_dir.players)}")
+
+    assert len(p_api_no_dir.get_players_with_cluster_data()) == 1, f"Expected 1 player with cluster data, got {len(p_api_no_dir.get_players_with_cluster_data())}"
+

@@ -55,7 +55,11 @@ class TamedDino(Dino):
             self.inv_uuid = None
             self._inventory = None
         else:
-            self.inv_uuid = UUID(inv_uuid.value)
+            try:
+                self.inv_uuid = UUID(inv_uuid.value)
+            except AttributeError:
+                self.inv_uuid = None
+                self._inventory = None
 
     def __init__(self, uuid: UUID = None, save: AsaSave = None, bypass_inventory: bool = True):
         self.inv_uuid = None

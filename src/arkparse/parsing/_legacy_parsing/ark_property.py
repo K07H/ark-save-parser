@@ -361,6 +361,9 @@ class ArkProperty:
             ArkSaveLogger.exit_struct()
         
             return p
+        
+    def __str__(self):
+        return f"ArkProperty(name={self.name}, type={self.type}, value={self.value})"
 
     @staticmethod
     def read_property_value(value_type: ArkValueType, byte_buffer: ArkBinaryParser) -> Any:

@@ -320,6 +320,33 @@ class JsonApi:
 
         ArkSaveLogger.api_log("Players successfully exported.")
 
+    def export_cluster_data(self, player_api: PlayerApi = None, cluster_data_dir: str = None, export_folder_path: str = Path.cwd() / "json_exports"):
+        ArkSaveLogger.api_log("Exporting cluster data...")
+
+        # Get player API if not provided.
+        if player_api is None:
+            player_api = PlayerApi(self.save, self.ignore_error, cluster_data_dir=cluster_data_dir)
+
+        all_cluster_data = []
+        for unique_id, cluster_data in player_api.cluster_data.items():
+            cluster_data_json_obj = {
+                "PlayerUniqueID": unique_id.__str__(),
+                "Dinos": [dino.to_json_obj() for dino in cluster_data.dinos],
+                "Items": [item.to_json_obj() for item in cluster_data.items]
+            }
+            all_cluster_data.append(cluster_data_json_obj)
+
+        # Create json exports folder if it does not exist.
+        path_obj = Path(cluster_data_dir) if cluster_data_dir is not None else Path(export_folder_path)
+        if not (path_obj.exists() and path_obj.is_dir()):
+            path_obj.mkdir(parents=True, exist_ok=True)
+
+        # Write JSON.
+        with open(path_obj / "cluster_data.json", "w") as text_file:
+            text_file.write(json.dumps(all_cluster_data, default=lambda o: o.to_json_obj() if hasattr(o, 'to_json_obj') else None, indent=4, cls=DefaultJsonEncoder))
+
+        ArkSaveLogger.api_log("Cluster data successfully exported.")
+
     def export_tribes(self, player_api: PlayerApi = None, export_folder_path: str = Path.cwd() / "json_exports", include_players_data: bool = False):
         ArkSaveLogger.api_log("Exporting tribes...")
 
@@ -506,3 +533,4 @@ class JsonApi:
         self.export_player_pawns(player_api=player_api, export_folder_path=export_folder_path)
         self.export_players(player_api=player_api, export_folder_path=export_folder_path)
         self.export_tribes(player_api=player_api, export_folder_path=export_folder_path)
+        self.export_cluster_data(player_api=player_api, export_folder_path=export_folder_path)

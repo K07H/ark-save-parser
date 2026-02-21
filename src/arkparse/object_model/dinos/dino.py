@@ -55,7 +55,7 @@ class Dino(ParsedObjectBase):
                 self.ai_controller = DinoAiController(UUID(ai_uuid), save=save)
 
     def __str__(self) -> str:
-        return "Dino(type={}, lv={})".format(self.get_short_name(), self.stats.current_level)
+        return f"Dino(type={self.get_short_name()}, lv={self.stats.current_level}, gender={'Female' if self.is_female else 'Male'}, cryopodded={self.is_cryopodded}, dead={self.is_dead}, id=({self.id_}), location=({self._location}))"
     
     def __eq__(self, other) -> bool:
         if not isinstance(other, Dino):
@@ -77,6 +77,7 @@ class Dino(ParsedObjectBase):
             d.__init_props__()
 
         d.stats = DinoStats.from_object(status_obj)
+        d.stats.object = status_obj
 
         return d
     

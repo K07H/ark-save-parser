@@ -9,6 +9,11 @@ if TYPE_CHECKING:
 from arkparse.logging import ArkSaveLogger
 
 T = TypeVar('T')
+PRINT_DEPTH = 0
+
+def set_print_depth(depth: int) -> None:
+    global PRINT_DEPTH
+    PRINT_DEPTH = depth
 
 @dataclass
 class ArkPropertyContainer:
@@ -44,6 +49,20 @@ class ArkPropertyContainer:
             if isinstance(property.value, ArkPropertyContainer):
                 property: ArkPropertyContainer
                 property.value.print_properties()
+            elif property.type == "Array":
+                max_items = 10
+                ArkSaveLogger.info_log(f"Array Property ({property.type}) ({property.position}): {property.name} = [")
+                for i, item in enumerate(property.value):
+                    if i >= max_items:
+                        ArkSaveLogger.info_log(f"  ... and {len(property.value) - max_items} more items")
+                        break
+                    if isinstance(item, ArkPropertyContainer):
+                        ArkSaveLogger.info_log(f"  [{i}]: {{")
+                        item.print_properties()
+                        ArkSaveLogger.info_log(f"  }}")
+                    else:
+                        ArkSaveLogger.info_log(f"  [{i}]: {item}")
+                ArkSaveLogger.info_log("]")
             else:
                 property: ArkProperty = property
                 ArkSaveLogger.info_log(f"Property ({property.type}) ({property.position}): {property.name} = {property.value}")
@@ -120,3 +139,37 @@ class ArkPropertyContainer:
         for ark_property in self.properties:
             all_properties.append(ark_property.to_json_obj())
         return { "properties": all_properties }
+
+    def to_string(self, parent_indent: str = "", depth: int = 0) -> str:
+        props_str = ""
+
+        if PRINT_DEPTH > 0 and depth > PRINT_DEPTH:
+            return f"{parent_indent}... (truncated at depth {PRINT_DEPTH})"
+        
+        for prop in self.properties:
+            if isinstance(prop.value, ArkPropertyContainer):
+                props_str += f"{parent_indent}{prop.name} ({prop.type}) (pos={prop.position}):\n"
+                props_str += prop.value.to_string(parent_indent + "  ", depth=depth + 1) + "\n"
+            elif prop.type == "Array":
+                props_str += f"{parent_indent}{prop.name} ({prop.type}) (pos={prop.position}): ["
+                ind = 0
+                if len(prop.value) == 0:
+                    props_str += "]\n"
+                    continue
+                else:
+                    props_str += "\n"
+                max_prints = 10
+                prints = min(len(prop.value), max_prints)
+                for item in prop.value[:prints]:
+                    props_str += f"{parent_indent}  [{ind}]: "
+                    ind += 1
+                    if isinstance(item, ArkPropertyContainer):
+                        props_str += item.to_string(parent_indent + "  ", depth=depth) + "\n"
+                    else:
+                        props_str += f"{str(item)}\n"
+                if len(prop.value) > max_prints:
+                    props_str += f"{parent_indent}  ... and {len(prop.value) - max_prints} more items\n"
+                props_str += f"{parent_indent}]\n"
+            else:
+                props_str += f"{parent_indent}{str(prop)}\n"
+        return props_str.rstrip()

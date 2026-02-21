@@ -12,7 +12,7 @@ from .ark_binary_parser import ArkBinaryParser
 from .ark_property import ArkProperty
 
 class ArkArchive:
-    def __init__(self, archive_data: bytes, from_store: bool = True):
+    def __init__(self, archive_data: bytes, from_store: bool = True, cluster_dino: bool = False):
         self.objects: List[ArkObject] = []
         
         # Set up the save context and binary parser
@@ -24,10 +24,12 @@ class ArkArchive:
         ArkSaveLogger.enter_struct("ArkArchive")
         
         # Determine the save version and adjust parsing accordingly
-        save_context.save_version = self.data.read_int()
+        if not cluster_dino:
+            save_context.save_version = self.data.read_int()
+
         old_save = False
         propertyClass = ArkProperty
-        if save_context.save_version != 7:
+        if save_context.save_version != 7 and not cluster_dino:
             old_save = True
             propertyClass = LegacyArkProperty
             ArkSaveLogger.parser_log(f"Detected old save format (pre Unreal 5.5), using legacy parser")
@@ -38,17 +40,18 @@ class ArkArchive:
         ArkSaveLogger.parser_log(f"Archive version: {save_context.save_version}")
 
         # Parse 5.5 specific data
-        if not old_save:
+        if not old_save or cluster_dino:
             # For Unreal 5.5 there are 2 extra 32-bit integers here
             extra1 = self.data.read_int()
             extra2 = self.data.read_int()
             ArkSaveLogger.parser_log(f"5.5 specific extra data read: {extra1}, {extra2}")
 
         # Read the number of objects in the archive
-        count = self.data.read_int()        
+        count = self.data.read_int()
 
+        ArkSaveLogger.parser_log(f"Number of objects in archive: {count}")
         for _ in range(count):
-            self.objects.append(ArkObject.from_reader(self.data))
+            self.objects.append(ArkObject.from_reader(self.data, cluster_dino))
         ArkSaveLogger.parser_log(f"Read {len(self.objects)} objects from archive (expected={count})")
 
         if len(self.objects) == 0:
@@ -70,6 +73,7 @@ class ArkArchive:
             except Exception as e:
                 ArkSaveLogger.error_log(f"Error reading properties for object \'{obj.class_name}\' at {self.data.get_position()}: {e}")
                 self.data.structured_print()
+                raise e
             ArkSaveLogger.exit_struct()
 
         ArkSaveLogger.exit_struct()
@@ -85,3 +89,6 @@ class ArkArchive:
 
     def get_object_by_index(self, index: int) -> ArkObject:
         return self.objects[index]
+    
+    def __str__(self):
+        return f"ArkArchive(objects={len(self.objects)})" + "\n" + "\n".join([str(obj) for obj in self.objects])

@@ -16,6 +16,13 @@ from arkparse.classes.equipment import Equipment as EqClasses
 from .general_api import GeneralApi
 
 class EquipmentApi(GeneralApi):
+    _DEFAULT_CONFIG = GameObjectReaderConfiguration(
+            blueprint_name_filter=lambda name: name is not None and \
+                        (("Weapons" in name and ("PrimalItemAmmo" not in name) and ("PrimalItem_WeaponEmptyCryopod" not in name)) or \
+                            "Armor" in name or \
+                            name in (EqClasses.weapons.all_bps + EqClasses.shield.all_bps + EqClasses.saddles.all_bps + EqClasses.armor.all_bps))
+    )
+
     class Classes:
         WEAPON = Weapon
         SADDLE = Saddle
@@ -23,15 +30,26 @@ class EquipmentApi(GeneralApi):
         SHIELD = Shield
 
     def __init__(self, save: AsaSave):
-        config = GameObjectReaderConfiguration(
-            blueprint_name_filter=lambda name: name is not None and \
-                                               (("Weapons" in name and "PrimalItemAmmo" not in name) or \
-                                                 "Armor" in name or \
-                                                 name in EqClasses.all_bps)
-                                                 
-        )
+        config = EquipmentApi._DEFAULT_CONFIG
         super().__init__(save, config)
         self.parsed_objects: Dict[UUID, Equipment] = {}
+
+    @staticmethod
+    def bp_to_class(blueprint: str):
+        if blueprint in EqClasses.weapons.all_bps or ("/Weapons/" in blueprint):
+            return EquipmentApi.Classes.WEAPON
+        elif blueprint in EqClasses.saddles.all_bps or ("/Saddles/" in blueprint):
+            return EquipmentApi.Classes.SADDLE
+        elif blueprint in EqClasses.shield.all_bps or ("/Armor/Shields/" in blueprint):
+            return EquipmentApi.Classes.SHIELD
+        elif blueprint in EqClasses.armor.all_bps or ("/Armor/" in blueprint):
+            return EquipmentApi.Classes.ARMOR
+        else:
+            return None
+
+    @staticmethod
+    def is_applicable_bp(blueprint: str) -> bool:
+        return EquipmentApi._DEFAULT_CONFIG.blueprint_name_filter(blueprint)
 
     def __get_cls_filter(self, cls: "EquipmentApi.Classes"):
         if cls == self.Classes.WEAPON:

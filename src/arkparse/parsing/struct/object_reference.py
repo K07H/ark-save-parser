@@ -24,6 +24,10 @@ class ObjectReference:
         if reader is None:
             self.value = None
             return
+        
+        reader.set_position(reader.position - 5)
+        data_size = reader.read_uint32()
+        reader.skip_bytes(1)  # Skip the byte we backed up for size reading
 
         # If the save context has a name table, handle accordingly
         if reader.save_context.has_name_table() and not reader.in_cryopod:
@@ -56,7 +60,12 @@ class ObjectReference:
             self.value = reader.read_int()
         elif object_type == 1:
             self.type = ObjectReference.TYPE_PATH
-            self.value = reader.read_string()
+            if reader.peek_name() == "ItemArchetype" and data_size == 4:
+                self.value = "NONE"  # Not sure why...
+                # input("DEBUG: Read NONE path object reference")
+            else:
+                self.value = reader.read_string()
+
         else:
             reader.skip_bytes(-4)
             self.type = ObjectReference.TYPE_PATH_NO_TYPE

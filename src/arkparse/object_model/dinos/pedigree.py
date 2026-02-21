@@ -1,13 +1,12 @@
 from typing import List, TYPE_CHECKING
 import json
 
-from arkparse.api.player_api import PlayerApi
-
 from .dino_id import DinoId
 from .dino import Dino
 from .tamed_dino import TamedDino
 if TYPE_CHECKING:
     from arkparse.api import DinoApi
+    from arkparse.api.player_api import PlayerApi
 from arkparse.parsing.struct.ark_dino_ancestor_entry import ArkDinoAncestor, ArkDinoAncestorEntry
 
 class PedigreeEntry:
@@ -182,9 +181,9 @@ class Pedigree:
     owner: str
 
     _api: "DinoApi"
-    _player_api: PlayerApi
+    _player_api: "PlayerApi"
 
-    def __init__(self, dino: Dino, api: "DinoApi", player_api: PlayerApi = None):
+    def __init__(self, dino: Dino, api: "DinoApi", player_api: "PlayerApi" = None):
         self.entries: set[PedigreeEntry] = set()
         self.top_entries: set[PedigreeEntry] = set()
         self.bottom_entries: set[PedigreeEntry] = set()

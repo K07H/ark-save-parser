@@ -4,7 +4,7 @@ from uuid import UUID
 from arkparse import AsaSave
 from arkparse.logging.ark_save_logger import ArkSaveLogger
 from arkparse.enums import ArkEquipmentStat
-from arkparse.classes.equipment import Armor as ArmorBps, Shields as ShieldBps, Saddles as SaddleBps, Weapons, Misc
+from arkparse.classes.equipment import Armor as ArmorBps, Shields as ShieldBps, Saddles as SaddleBps, Weapons, Misc, Mek, ArmaDoggoGear as Arma
 
 from .__equipment import Equipment
 from ...utils.json_utils import DefaultJsonEncoder
@@ -26,7 +26,7 @@ class EquipmentWithDurability(Equipment):
             return 25
         elif bp in ArmorBps.riot.all_bps or bp in ArmorBps.flak.all_bps or bp in ArmorBps.tek.all_bps:
             return 120
-        elif bp in ArmorBps.scuba.pants:
+        elif bp in ArmorBps.scuba.pants or bp in Mek.transformer:
             return 50
         elif bp in [ArmorBps.scuba.chest, ArmorBps.scuba.flippers, ArmorBps.scuba.goggles]:
             return 45
@@ -82,10 +82,12 @@ class EquipmentWithDurability(Equipment):
         elif bp in [Weapons.gathering.sickle, Weapons.gathering.metal_hatchet, Weapons.gathering.metal_pick, 
                     Weapons.gathering.stone_hatchet, Weapons.gathering.stone_pick, Weapons.gathering.fishing_rod,
                     Weapons.advanced.assault_rifle, Weapons.primitive.slingshot, Weapons.primitive.stone_club,
-                    Weapons.primitive.pike, Weapons.primitive.lance, Weapons.advanced.flamethrower, Weapons.primitive.torch]:
+                    Weapons.primitive.pike, Weapons.primitive.lance, Weapons.advanced.flamethrower, Weapons.primitive.torch]  or bp in Arma.all_bps:
             return 40
         elif bp == Misc.climb_pick:
             return 65
+        elif bp == Mek.shield or bp == Mek.cannon or bp == Mek.missile_pod:
+            return 5000
         else:
             if bp not in _LOGGED_WARNINGS:
                 _LOGGED_WARNINGS.add(bp)

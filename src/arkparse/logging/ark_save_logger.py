@@ -48,7 +48,10 @@ class ArkSaveLogger:
 
     @staticmethod
     def parser_log(message: str):
-        ArkSaveLogger.__log(message, ArkSaveLogger.LogTypes.PARSER, ArkSaveLogger.LogColors.CYAN)
+        struct_header = ""
+        for struct in ArkSaveLogger.current_struct_path:
+            struct_header += f"[{struct}]"
+        ArkSaveLogger.__log(struct_header + message, ArkSaveLogger.LogTypes.PARSER, ArkSaveLogger.LogColors.CYAN)
 
     @staticmethod
     def info_log(message: str):

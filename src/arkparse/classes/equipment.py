@@ -5,7 +5,7 @@ class Saddles:
     ceratosaurus: str = "/Game/ASA/Dinos/Ceratosaurus/Dinos/Saddle/PrimalItemArmor_CeratosaurusSaddle_ASA.PrimalItemArmor_CeratosaurusSaddle_ASA_C"
     deinosuchus: str = "/Game/ASA/Dinos/Deinosuchus/Saddle/PrimalItemArmor_Deinosuchus_Saddle_ASA.PrimalItemArmor_Deinosuchus_Saddle_ASA_C"
     fasolasuchus: str = "/Game/ASA/Dinos/Fasolasuchus/PrimalItemArmor_FasolaSaddle.PrimalItemArmor_FasolaSaddle_C"
-    gigantoraptor: str = "/Game/ASA/Dinos/Gigantoraptor/PrimalItemArmor_GigantoraptorSaddle.PrimalItemArmor_GigantoraptorSaddle_C"
+    gigantoraptor_ASA: str = "/Game/ASA/Dinos/Gigantoraptor/PrimalItemArmor_GigantoraptorSaddle.PrimalItemArmor_GigantoraptorSaddle_C"
     shastasaurus: str = "/Game/ASA/Dinos/Shastasaurus/PrimalItemArmor_ShastaSaddle_Submarine.PrimalItemArmor_ShastaSaddle_Submarine_C"
     xiphactinus: str = "/Game/ASA/Dinos/Xiphactinus/Dinos/Saddle/PrimalItemArmor_XiphSaddle_ASA.PrimalItemArmor_XiphSaddle_ASA_C"
     helicoprion: str = "/Game/ASA/Dinos/Helicoprion/Saddle/PrimalItemArmor_Helicoprion.PrimalItemArmor_Helicoprion_C"
@@ -106,8 +106,9 @@ class Saddles:
     ravager: str = "/Game/Aberration/Dinos/CaveWolf/PrimalItemArmor_CavewolfPromoSaddle.PrimalItemArmor_CavewolfPromoSaddle_C"
     managarmr: str = "/Game/Extinction/CoreBlueprints/Items/Saddle/PrimalItemArmor_IceJumperSaddle.PrimalItemArmor_IceJumperSaddle_C"
     velonosaur: str = "/Game/Extinction/CoreBlueprints/Items/Saddle/PrimalItemArmor_SpindlesSaddle.PrimalItemArmor_SpindlesSaddle_C"
+    gigantoraptor: str = "/Gigantoraptor/Gigantoraptor/PrimalItemArmor_GigantoraptorSaddle.PrimalItemArmor_GigantoraptorSaddle_C"
 
-    all_bps = [yi_ling, archelon, ceratosaurus, deinosuchus, fasolasuchus, gigantoraptor, 
+    all_bps = [yi_ling, archelon, ceratosaurus, deinosuchus, fasolasuchus, gigantoraptor_ASA, 
                shastasaurus, xiphactinus, saddle_cart_btt, rockdrake_btt, allo, ankylo, 
                argentavis, arthro, baryonyx, basilo, castoroides, carcha, carno, chalico, 
                daeodon, diplodocus, dire_bear, doedi, dolphin, dunkleosteus, equus, gallimimus, 
@@ -120,7 +121,7 @@ class Saddles:
                titanosaur_platform, beelzebufo, trike, carbo, tuso, yuty, basilisk, cave_wolf,
                karkinos, mole_rat, rock_drake, rock_drake_tek, camel, mantis, moth, rock_golem,
                thorny_dragon, bison, deinotherium, dreadnoughtus, maelizard, gacha, gas_bags,
-               snow_owl, ravager, managarmr, velonosaur, helicoprion]
+               snow_owl, ravager, managarmr, velonosaur, helicoprion, gigantoraptor]
     
 class Hazard:
     boots: str = "/Game/Aberration/CoreBlueprints/Items/Armor/HazardSuit/PrimalItemArmor_HazardSuitBoots.PrimalItemArmor_HazardSuitBoots_C"
@@ -350,6 +351,30 @@ class Weapons:
 
     all_bps = gathering.all_bps + primitive.all_bps + advanced.all_bps 
 
+class Mek:
+    shield: str = "/Game/Extinction/CoreBlueprints/Items/Saddle/PrimalItemArmor_MekBackpack_Shield.PrimalItemArmor_MekBackpack_Shield_C"
+    cannon: str = "/Game/Extinction/CoreBlueprints/Items/Saddle/PrimalItemArmor_MekBackpack_SiegeCannon.PrimalItemArmor_MekBackpack_SiegeCannon_C"
+    missile_pod: str = "/Game/Extinction/CoreBlueprints/Items/Saddle/PrimalItemArmor_MekBackpack_MissilePod.PrimalItemArmor_MekBackpack_MissilePod_C"
+    transformer: str = "/Game/Extinction/CoreBlueprints/Items/Saddle/PrimalItemArmor_MekTransformer.PrimalItemArmor_MekTransformer_C"
+
+    all_bps = [shield, cannon]
+
+class ArmaDoggoGear:
+    armor: str = "/Game/Packs/Wasteland/Dinos/Doggo/PrimalItemArmor_DinoCompanionSaddle_Doggo.PrimalItemArmor_DinoCompanionSaddle_Doggo_C"
+    ammo_box: str = "/Game/Packs/Wasteland/Dinos/CompanionDino/Items/Armor/PrimalItemArmor_DinoCompanion_Gear_AmmoBox.PrimalItemArmor_DinoCompanion_Gear_AmmoBox_C"
+    extra_armor: str = "/Game/Packs/Wasteland/Dinos/CompanionDino/Items/Armor/PrimalItemArmor_DinoCompanion_Gear_ExtraArmor.PrimalItemArmor_DinoCompanion_Gear_ExtraArmor_C"
+    speed_booster: str = "/Game/Packs/Wasteland/Dinos/CompanionDino/Items/Armor/PrimalItemArmor_DinoCompanion_Gear_Movespeed.PrimalItemArmor_DinoCompanion_Gear_Movespeed_C"
+    oxygen_tank: str = "/Game/Packs/Wasteland/Dinos/CompanionDino/Items/Armor/PrimalItemArmor_DinoCompanion_Gear_OxygenTank.PrimalItemArmor_DinoCompanion_Gear_OxygenTank_C"
+    rucksack: str = "/Game/Packs/Wasteland/Dinos/CompanionDino/Items/Armor/PrimalItemArmor_DinoCompanion_Gear_Bag.PrimalItemArmor_DinoCompanion_Gear_Bag_C"
+    medpack: str = "/Game/Packs/Wasteland/Dinos/CompanionDino/Items/Armor/PrimalItemArmor_DinoCompanion_Gear_Medkit.PrimalItemArmor_DinoCompanion_Gear_Medkit_C"
+    camping_gear: str = "/Game/Packs/Wasteland/Dinos/CompanionDino/Items/Armor/PrimalItemArmor_DinoCompanion_Gear_RolledUpSleepingBag.PrimalItemArmor_DinoCompanion_Gear_RolledUpSleepingBag_C"
+    picnic_set: str = "/Game/Packs/Wasteland/Dinos/CompanionDino/Items/Armor/PrimalItemArmor_DinoCompanion_Gear_FoodBasket.PrimalItemArmor_DinoCompanion_Gear_FoodBasket_C"
+    battle_spikes: str = "\Game\Packs\Wasteland\Dinos\CompanionDino\Items\Armor\PrimalItemArmor_DinoCompanion_Gear_Spikes.PrimalItemArmor_DinoCompanion_Gear_Spikes_C"
+    bait_trap: str = "/Game/Packs/Wasteland/Dinos/CompanionDino/Items/Armor/PrimalItemArmor_DinoCompanion_Gear_MeatSack.PrimalItemArmor_DinoCompanion_Gear_MeatSack_C"
+
+
+
+    all_bps = [armor]
 
 class Equipment:
     saddles = Saddles()
@@ -360,5 +385,7 @@ class Equipment:
     ammo = Ammo()
     misc: Misc = Misc()
     throwables: Throwables = Throwables()
+    mek: Mek = Mek()
+    arma_doggo_gear: ArmaDoggoGear = ArmaDoggoGear()
 
-    all_bps = saddles.all_bps + armor.all_bps + utilities.all_bps + weapons.all_bps + shield.all_bps + ammo.all_bps + misc.all_bps + throwables.all_bps
+    all_bps = saddles.all_bps + armor.all_bps + utilities.all_bps + weapons.all_bps + shield.all_bps + ammo.all_bps + misc.all_bps + throwables.all_bps + mek.all_bps + arma_doggo_gear.all_bps

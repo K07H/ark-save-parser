@@ -203,8 +203,9 @@ def count_stacks(inventory: Inventory, item_type: str) -> int:
     total = 0
     for item in inventory.items.values():
         if item.object.blueprint == item_type:
-            print(f"Found item {item.get_short_name()} with quantity {item.quantity}")
+            # print(f"Found item {item.get_short_name()} with quantity {item.quantity}")
             total += item.quantity
+    print(f"Total stacks of item {item_type}: {total}")
     return total
 
 def test_generator_fuel(rag_limited: AsaSave, temp_file_folder: Path, resource_path: Path):
@@ -222,13 +223,15 @@ def test_generator_fuel(rag_limited: AsaSave, temp_file_folder: Path, resource_p
     tek_gens = base.get_generators(Base.GeneratorType.TEK)
     for gen in tek_gens:
         nr_of_element = count_stacks(gen.inventory, Classes.resources.Basic.element)
-        print(f"Generator {gen.object.uuid} has {nr_of_element} Element in inventory")
+        # print(f"Generator {gen.object.uuid} has {nr_of_element} Element in inventory")
         assert nr_of_element == 37, f"Expected 37 Element in generator inventory, got {nr_of_element}"
+    print(f"Checked tek generators")
 
     for elec_gen in base.get_generators(Base.GeneratorType.ELECTRIC):
         nr_of_fuel = count_stacks(elec_gen.inventory, Classes.resources.Crafted.gasoline)
-        print(f"Generator {elec_gen.object.uuid} has {nr_of_fuel} Fuel in inventory")
+        # print(f"Generator {elec_gen.object.uuid} has {nr_of_fuel} Fuel in inventory")
         assert nr_of_fuel == 117, f"Expected 117 Fuel in electric generator inventory, got {nr_of_fuel}"
+    print(f"Checked electric generators")
 
     base_api.save.store_db(temp_file_folder / "test_generator_fuel.db")
     assert (temp_file_folder / "test_generator_fuel.db").exists(), "Database file should be created"
@@ -244,13 +247,15 @@ def test_generator_fuel(rag_limited: AsaSave, temp_file_folder: Path, resource_p
     tek_gens = base.get_generators(Base.GeneratorType.TEK)
     for gen in tek_gens:
         nr_of_element = count_stacks(gen.inventory, Classes.resources.Basic.element)
-        print(f"Generator {gen.object.uuid} has {nr_of_element} Element in inventory")
+        # print(f"Generator {gen.object.uuid} has {nr_of_element} Element in inventory")
         assert nr_of_element == 37, f"Expected 37 Element in generator inventory, got {nr_of_element}"
+    print(f"Checked tek generators after re-import")
 
     for elec_gen in base.get_generators(Base.GeneratorType.ELECTRIC):
         nr_of_fuel = count_stacks(elec_gen.inventory, Classes.resources.Crafted.gasoline)
-        print(f"Generator {elec_gen.object.uuid} has {nr_of_fuel} Fuel in inventory")
+        # print(f"Generator {elec_gen.object.uuid} has {nr_of_fuel} Fuel in inventory")
         assert nr_of_fuel == 117, f"Expected 117 Fuel in electric generator inventory, got {nr_of_fuel}"
+    print(f"Checked electric generators after re-import")
 
 def test_turret_ammo(rag_limited: AsaSave, temp_file_folder: Path, resource_path: Path):
     """
@@ -266,24 +271,28 @@ def test_turret_ammo(rag_limited: AsaSave, temp_file_folder: Path, resource_path
     print(f"Set ammo in turrets, now checking inventory")
     for heavy_turret in base.get_turrets(Base.TurretType.HEAVY):
         nr_of_ammo = count_stacks(heavy_turret.inventory, Classes.equipment.ammo.advanced_rifle_bullet)
-        print(f"Heavy Turret {heavy_turret.object.uuid} has {nr_of_ammo} Advanced Rifle Bullets in inventory")
+        # print(f"Heavy Turret {heavy_turret.object.uuid} has {nr_of_ammo} Advanced Rifle Bullets in inventory")
         assert nr_of_ammo == 100, f"Expected 100 Advanced Rifle Bullets in heavy turret inventory, got {nr_of_ammo}"
+    print(f"Checked heavy turrets, all have correct ammo")
 
     for tek_turret in base.get_turrets(Base.TurretType.TEK):
         nr_of_ammo = count_stacks(tek_turret.inventory, Classes.resources.Basic.element_shard)
-        print(f"Tek Turret {tek_turret.object.uuid} has {nr_of_ammo} Element Shards in inventory")
+        # print(f"Tek Turret {tek_turret.object.uuid} has {nr_of_ammo} Element Shards in inventory")
         assert nr_of_ammo == 1000, f"Expected 1000 Element Shards in tek turret inventory, got {nr_of_ammo}"
+    print(f"Checked tek turrets, all have correct ammo")
 
     base.set_turret_ammo(base_api.save, bullets_in_heavy=2345, shards_in_tek=1717)
     for heavy_turret in base.get_turrets(Base.TurretType.HEAVY):
         nr_of_ammo = count_stacks(heavy_turret.inventory, Classes.equipment.ammo.advanced_rifle_bullet)
-        print(f"Heavy Turret {heavy_turret.object.uuid} has {nr_of_ammo} Advanced Rifle Bullets in inventory")
+        # print(f"Heavy Turret {heavy_turret.object.uuid} has {nr_of_ammo} Advanced Rifle Bullets in inventory")
         assert nr_of_ammo == 2345, f"Expected 2345 Advanced Rifle Bullets in heavy turret inventory, got {nr_of_ammo}"
+    print(f"Checked heavy turrets, all have correct ammo")
 
     for tek_turret in base.get_turrets(Base.TurretType.TEK):
         nr_of_ammo = count_stacks(tek_turret.inventory, Classes.resources.Basic.element_shard)
-        print(f"Tek Turret {tek_turret.object.uuid} has {nr_of_ammo} Element Shards in inventory")
+        # print(f"Tek Turret {tek_turret.object.uuid} has {nr_of_ammo} Element Shards in inventory")
         assert nr_of_ammo == 1717, f"Expected 1717 Element Shards in tek turret inventory, got {nr_of_ammo}"
+    print(f"Checked tek turrets, all have correct ammo")
 
     base_api.save.store_db(temp_file_folder / "test_turret_ammo.db")
     assert (temp_file_folder / "test_turret_ammo.db").exists(), "Database file should be created"
@@ -297,13 +306,15 @@ def test_turret_ammo(rag_limited: AsaSave, temp_file_folder: Path, resource_path
     print(f"Re-imported base has {len(reimport_base.structures)} structures, nr of files: {count_files_in_folder(temp_file_folder / 'test_turret_ammo')}")
     for heavy_turret in reimport_base.get_turrets(Base.TurretType.HEAVY):
         nr_of_ammo = count_stacks(heavy_turret.inventory, Classes.equipment.ammo.advanced_rifle_bullet)
-        print(f"Heavy Turret {heavy_turret.object.uuid} has {nr_of_ammo} Advanced Rifle Bullets in inventory")
+        # print(f"Heavy Turret {heavy_turret.object.uuid} has {nr_of_ammo} Advanced Rifle Bullets in inventory")
         assert nr_of_ammo == 2345, f"Expected 2345 Advanced Rifle Bullets in heavy turret inventory, got {nr_of_ammo}"
+    print(f"Checked heavy turrets after re-import, all have correct ammo")
 
     for tek_turret in reimport_base.get_turrets(Base.TurretType.TEK):
         nr_of_ammo = count_stacks(tek_turret.inventory, Classes.resources.Basic.element_shard)
-        print(f"Tek Turret {tek_turret.object.uuid} has {nr_of_ammo} Element Shards in inventory")
+        # print(f"Tek Turret {tek_turret.object.uuid} has {nr_of_ammo} Element Shards in inventory")
         assert nr_of_ammo == 1717, f"Expected 1717 Element Shards in tek turret inventory, got {nr_of_ammo}"
+    print(f"Checked tek turrets after re-import, all have correct ammo")
 
     
 

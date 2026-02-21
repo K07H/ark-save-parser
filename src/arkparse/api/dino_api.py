@@ -29,13 +29,18 @@ class DinoApi:
         blueprint_name_filter=lambda name: \
             name is not None and \
                 (("Dinos/" in name and "_Character_" in name) or \
-                ("PrimalItem_WeaponEmptyCryopod" in name)))
+                ("PrimalItem_WeaponEmptyCryopod" in name or "PrimalItem_SCSCryopod" in name)))
 
     def __init__(self, save: AsaSave):
         self.save = save
         self.all_objects = None
         self.parsed_dinos: Dict[UUID, Dino] = {}
         self.parsed_cryopods: Dict[UUID, Cryopod] = {}
+
+    @staticmethod
+    def is_applicable_bp(blueprint: str) -> bool:
+        return DinoApi._DEFAULT_CONFIG.blueprint_name_filter(blueprint)
+
     def get_all_objects(self, config: GameObjectReaderConfiguration = None) -> Dict[UUID, ArkGameObject]:
         reuse = False
 
@@ -114,7 +119,7 @@ class DinoApi:
                             dino = Dino(obj.uuid, save=self.save)
                         self.parsed_dinos[obj.uuid] = dino
 
-                elif "PrimalItem_WeaponEmptyCryopod" in obj.blueprint and include_cryos and include_tamed:
+                elif ("PrimalItem_SCSCryopod" in obj.blueprint or "PrimalItem_WeaponEmptyCryopod" in obj.blueprint) and include_cryos and include_tamed:
                     if not obj.get_property_value("bIsEngram", default=False) and obj.get_property_value("CustomItemDatas") is not None:
                         if obj.uuid in self.parsed_cryopods:
                             is_baby = self.parsed_cryopods[obj.uuid].dino is not None and isinstance(self.parsed_cryopods[obj.uuid].dino, TamedBaby)
@@ -203,7 +208,7 @@ class DinoApi:
 
     def get_all_by_class(self, class_names: List[str], include_cryopodded: bool = True) -> Dict[UUID, Dino]:
         config = GameObjectReaderConfiguration(
-            blueprint_name_filter=lambda name: name is not None and ((name in class_names) or (include_cryopodded and ("PrimalItem_WeaponEmptyCryopod" in name)))
+            blueprint_name_filter=lambda name: name is not None and ((name in class_names) or (include_cryopodded and ("PrimalItem_WeaponEmptyCryopod" in name or "PrimalItem_SCSCryopod" in name)))
         )
 
         dinos = self.get_all(config, include_cryos=include_cryopodded)

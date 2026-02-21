@@ -13,10 +13,16 @@ class StackableApi(GeneralApi):
         RESOURCE = Resource
         AMMO = Ammo
 
+    _DEFAULT_CONFIG = GameObjectReaderConfiguration(
+            blueprint_name_filter=lambda name: name is not None and ("Resources/PrimalItemResource" in name or "/PrimalItemConsumable" in name or "PrimalItemAmmo" in name)
+    )
+
+    @staticmethod
+    def is_applicable_bp(blueprint: str) -> bool:
+        return StackableApi._DEFAULT_CONFIG.blueprint_name_filter(blueprint)
+
     def __init__(self, save: AsaSave):
-        config = GameObjectReaderConfiguration(
-            blueprint_name_filter=lambda name: name is not None and "Resources/PrimalItemResource" in name or "/PrimalItemConsumable" in name
-        )
+        config = StackableApi._DEFAULT_CONFIG
         super().__init__(save, config)
     
     def get_all(self, cls: "StackableApi.Classes", config = None) -> Dict[UUID, InventoryItem]:
