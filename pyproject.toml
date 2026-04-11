@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "arkparse"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
     "rcon>=2.4.9",
     "numpy>=2.3.2",
@@ -21,6 +21,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     # Add additional classifiers as needed
 ]
+
+[project.optional-dependencies]
+fast = ["arkparse-fast-core"]
 
 [project.urls]
 Homepage = "https://github.com/VincentHenauGithub/ark-save-parser"

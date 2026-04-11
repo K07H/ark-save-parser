@@ -19,4 +19,6 @@ from .ark_painting_key_value import ArkPaintingKeyValue
 from .ark_dino_order_id import ArkDinoOrderID
 from .ark_tribe_alliance import ArkTribeAlliance
 from .ark_tribe_rank_group import ArkTribeRankGroup
+from .ark_milestone_tree_level_and_index import ArkMilestoneTreeLevelAndIndex
+from .ark_patrol_group_saved_data import ArkPatrolGroupSavedData
 

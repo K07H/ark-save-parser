@@ -11,12 +11,33 @@ from arkparse.object_model.ark_game_object import ArkGameObject
 from arkparse.enums import ArkDinoTrait
 from arkparse.utils.json_utils import DefaultJsonEncoder
 from .dino_ai_controller import DinoAiController
+from arkparse.logging import ArkSaveLogger
 
 from .stats import DinoStats
 from ...parsing import ArkBinaryParser
 from ...parsing.struct import ObjectReference
 from .dino_id import DinoId
 
+class GeneTrait:
+    def __init__(self, trait: str):
+        trait, level = self._parse_trait(trait)
+        self.trait: ArkDinoTrait = trait
+        self.level: int = level
+
+    def _parse_trait(self,trait: str):
+        if "[" in trait and trait.endswith("]"):
+            name = trait.split("[")[0]
+            level = int(trait.split("[")[1][:-1])
+            return ArkDinoTrait(name), level
+        else:
+            try:
+                return ArkDinoTrait(trait), 0
+            except ValueError:
+                ArkSaveLogger.error_log(f"Unknown gene trait: {trait}")
+                return None, 0
+
+    def __str__(self):
+        return f"{self.trait.value}[{self.level}]"
 
 class Dino(ParsedObjectBase):
     id_: DinoId = None
@@ -27,18 +48,17 @@ class Dino(ParsedObjectBase):
 
     ai_controller: DinoAiController = None
 
-    gene_traits: List[str] = []
+    gene_traits: List[GeneTrait] = []
     stats: DinoStats = DinoStats()
     _location: ActorTransform = ActorTransform()
 
     #saddle: Saddle
-
     def __init_props__(self):
         super().__init_props__()
 
         self.is_female = self.object.get_property_value("bIsFemale", False)
         self.id_ = DinoId.from_data(self.object)
-        self.gene_traits = self.object.get_array_property_value("GeneTraits")
+        self.gene_traits = [GeneTrait(t) for t in self.object.get_array_property_value("GeneTraits")]
         self.is_dead = self.object.get_property_value("bIsDead", False)
         self._location = ActorTransform(vector=self.object.get_property_value("SavedBaseWorldLocation"))
     
@@ -55,7 +75,7 @@ class Dino(ParsedObjectBase):
                 self.ai_controller = DinoAiController(UUID(ai_uuid), save=save)
 
     def __str__(self) -> str:
-        return f"Dino(type={self.get_short_name()}, lv={self.stats.current_level}, gender={'Female' if self.is_female else 'Male'}, cryopodded={self.is_cryopodded}, dead={self.is_dead}, id=({self.id_}), location=({self._location}))"
+        return f"Dino(type={self.get_short_name()}, lv={self.stats.current_level}, gender={'Female' if self.is_female else 'Male'}, cryopodded={self.is_cryopodded}, dead={self.is_dead}, id=({self.id_}), location=({self._location}, gene_traits={str([str(t) for t in self.gene_traits])}))"
     
     def __eq__(self, other) -> bool:
         if not isinstance(other, Dino):
@@ -266,6 +286,12 @@ class Dino(ParsedObjectBase):
 
     def heal(self):
         self.stats.heal()
+
+    def feed(self):
+        self.stats.feed()
+
+    def wake_up(self):
+        self.stats.wake_up()
 
     def disable_wandering(self):
         """

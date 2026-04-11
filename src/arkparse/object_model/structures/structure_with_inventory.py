@@ -16,6 +16,7 @@ class StructureWithInventory(Structure):
     max_item_count: int
 
     _inventory: Inventory
+    _bps_in_inventory: Optional[set[str]] = None
 
     def __init__(self, uuid: UUID, save: AsaSave, bypass_inventory: bool = False):
         self._inventory = None

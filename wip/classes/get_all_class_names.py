@@ -118,5 +118,6 @@ maps = [
 # for map_name in maps:
 #     categorize(base_path / f"{map_name.to_file_name()}_WP" / f"{map_name.to_file_name()}_WP.ark")
 
-save_path = ArkFtpClient.from_config(Path("../../ftp_config.json"), ArkMap.RAGNAROK).download_save_file(Path.cwd())
+# save_path = ArkFtpClient.from_config(Path("../../ftp_config.json"), ArkMap.LOST_COLONY).download_save_file(Path.cwd())
+save_path = Path.cwd() / "LostColony_WP.ark"
 categorize(save_path)

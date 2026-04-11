@@ -107,6 +107,18 @@ class Saddles:
     managarmr: str = "/Game/Extinction/CoreBlueprints/Items/Saddle/PrimalItemArmor_IceJumperSaddle.PrimalItemArmor_IceJumperSaddle_C"
     velonosaur: str = "/Game/Extinction/CoreBlueprints/Items/Saddle/PrimalItemArmor_SpindlesSaddle.PrimalItemArmor_SpindlesSaddle_C"
     gigantoraptor: str = "/Gigantoraptor/Gigantoraptor/PrimalItemArmor_GigantoraptorSaddle.PrimalItemArmor_GigantoraptorSaddle_C"
+    desmodus: str = "/Game/Fjordur/Dinos/Desmodus/PrimalItemArmor_DesmodusSaddle.PrimalItemArmor_DesmodusSaddle_C"
+    soulwyn: str = "/Game/LostColony/Dinos/AngelFox/PrimalItemArmor_AngelFoxSaddle.PrimalItemArmor_AngelFoxSaddle_C"
+    gigadesmodus_platform: str = "/Game/LostColony/Dinos/BossBat/Saddle/PrimalItemArmor_BossBatSaddle.PrimalItemArmor_BossBatSaddle_C"
+    gigadesmodus: str = "/Game/LostColony/Dinos/BossBat/Saddle/PrimalItemArmor_BossBatSaddle_Platform.PrimalItemArmor_BossBatSaddle_Platform_C"
+    maelwyn: str = "/Game/LostColony/Dinos/DevilFox/PrimalItemArmor_DevilFoxSaddle.PrimalItemArmor_DevilFoxSaddle_C"
+    aureliax: str = "/Game/LostColony/Dinos/SnowDragon/PrimalItemArmor_SnowDragonSaddle.PrimalItemArmor_SnowDragonSaddle_C"
+    ossidon: str = "/Game/LostColony/Dinos/SnowMonster/PrimalItemArmor_SnowMonsterSaddle.PrimalItemArmor_SnowMonsterSaddle_C"
+    megaraptor: str = "/Game/ASA/Dinos/Megaraptor/PrimalItemArmor_ValMegaraptorSaddle.PrimalItemArmor_ValMegaraptorSaddle_C"
+    pyromane: str = "/Game/ASA/Dinos/FireLion/PrimalItemArmor_Saddle_FireLion.PrimalItemArmor_Saddle_FireLion_C"
+    crylophosaurus: str = "/Game/ASA/Dinos/Cryolophosaurus/Saddle/PrimalItemArmor_CryoSaddle.PrimalItemArmor_CryoSaddle_C"
+    deinonychus: str = "/Game/Valguero/Dinos/Deinonychus/PrimalItemArmor_DeinonychusSaddle.PrimalItemArmor_DeinonychusSaddle_C"
+
 
     all_bps = [yi_ling, archelon, ceratosaurus, deinosuchus, fasolasuchus, gigantoraptor_ASA, 
                shastasaurus, xiphactinus, saddle_cart_btt, rockdrake_btt, allo, ankylo, 
@@ -121,7 +133,9 @@ class Saddles:
                titanosaur_platform, beelzebufo, trike, carbo, tuso, yuty, basilisk, cave_wolf,
                karkinos, mole_rat, rock_drake, rock_drake_tek, camel, mantis, moth, rock_golem,
                thorny_dragon, bison, deinotherium, dreadnoughtus, maelizard, gacha, gas_bags,
-               snow_owl, ravager, managarmr, velonosaur, helicoprion, gigantoraptor]
+               snow_owl, ravager, managarmr, velonosaur, helicoprion, gigantoraptor, desmodus,
+               soulwyn, gigadesmodus_platform, gigadesmodus, maelwyn, aureliax, ossidon, megaraptor, 
+               pyromane, crylophosaurus, deinonychus]
     
 class Hazard:
     boots: str = "/Game/Aberration/CoreBlueprints/Items/Armor/HazardSuit/PrimalItemArmor_HazardSuitBoots.PrimalItemArmor_HazardSuitBoots_C"
@@ -179,12 +193,28 @@ class Flak:
     shirt: str = "/Game/PrimalEarth/CoreBlueprints/Items/Armor/Metal/PrimalItemArmor_MetalShirt.PrimalItemArmor_MetalShirt_C"
     all_bps = [boots, gloves, helmet, pants, shirt]
 
+class CursedFlak:
+    boots: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_MetalBoots_Cursed.PrimalItemArmor_MetalBoots_Cursed_C"
+    gloves: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_MetalGloves_Cursed.PrimalItemArmor_MetalGloves_Cursed_C"
+    helmet: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_MetalHelmet_Cursed.PrimalItemArmor_MetalHelmet_Cursed_C"
+    pants: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_MetalPants_Cursed.PrimalItemArmor_MetalPants_Cursed_C"
+    shirt: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_MetalShirt_Cursed.PrimalItemArmor_MetalShirt_Cursed_C"
+    all_bps = [boots, gloves, helmet, pants, shirt]
+
 class Riot:
     boots: str = "/Game/PrimalEarth/CoreBlueprints/Items/Armor/Riot/PrimalItemArmor_RiotBoots.PrimalItemArmor_RiotBoots_C"
     gloves: str = "/Game/PrimalEarth/CoreBlueprints/Items/Armor/Riot/PrimalItemArmor_RiotGloves.PrimalItemArmor_RiotGloves_C"
     helmet: str = "/Game/PrimalEarth/CoreBlueprints/Items/Armor/Riot/PrimalItemArmor_RiotHelmet.PrimalItemArmor_RiotHelmet_C"
     pants: str = "/Game/PrimalEarth/CoreBlueprints/Items/Armor/Riot/PrimalItemArmor_RiotPants.PrimalItemArmor_RiotPants_C"
     shirt: str = "/Game/PrimalEarth/CoreBlueprints/Items/Armor/Riot/PrimalItemArmor_RiotShirt.PrimalItemArmor_RiotShirt_C"
+    all_bps = [boots, gloves, helmet, pants, shirt]
+
+class CursedRiot:
+    boots: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_RiotBoots_Cursed.PrimalItemArmor_RiotBoots_Cursed_C"
+    gloves: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_RiotGloves_Cursed.PrimalItemArmor_RiotGloves_Cursed_C"
+    helmet: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_RiotHelmet_Cursed.PrimalItemArmor_RiotHelmet_Cursed_C"
+    pants: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_RiotPants_Cursed.PrimalItemArmor_RiotPants_Cursed_C"
+    shirt: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_RiotShirt_Cursed.PrimalItemArmor_RiotShirt_Cursed_C"
     all_bps = [boots, gloves, helmet, pants, shirt]
 
 class SCUBA:
@@ -200,6 +230,22 @@ class TEK:
     helmet: str = "/Game/PrimalEarth/CoreBlueprints/Items/Armor/TEK/PrimalItemArmor_TekHelmet.PrimalItemArmor_TekHelmet_C"
     pants: str = "/Game/PrimalEarth/CoreBlueprints/Items/Armor/TEK/PrimalItemArmor_TekPants.PrimalItemArmor_TekPants_C"
     shirt: str = "/Game/PrimalEarth/CoreBlueprints/Items/Armor/TEK/PrimalItemArmor_TekShirt.PrimalItemArmor_TekShirt_C"
+    all_bps = [boots, gloves, helmet, pants, shirt]
+
+class CursedTek:
+    boots: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_TekBoots_Cursed.PrimalItemArmor_TekBoots_Cursed_C"
+    gloves: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_TekGloves_Cursed.PrimalItemArmor_TekGloves_Cursed_C"
+    helmet: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_TekHelmet_Cursed.PrimalItemArmor_TekHelmet_Cursed_C"
+    pants: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_TekPants_Cursed.PrimalItemArmor_TekPants_Cursed_C"
+    shirt: str = "/Game/LostColony/CoreBlueprints/Items/CursedArmor/PrimalItemArmor_TekShirt_Cursed.PrimalItemArmor_TekShirt_Cursed_C"
+    all_bps = [boots, gloves, helmet, pants, shirt]
+
+class Arctic:
+    boots: str = "/Game/LostColony/CoreBlueprints/Items/Armor/PrimalItemArmor_ArcticBoots.PrimalItemArmor_ArcticBoots_C"
+    gloves: str = "/Game/LostColony/CoreBlueprints/Items/Armor/PrimalItemArmor_ArcticGloves.PrimalItemArmor_ArcticGloves_C"
+    helmet: str = "/Game/LostColony/CoreBlueprints/Items/Armor/PrimalItemArmor_ArcticHelmet.PrimalItemArmor_ArcticHelmet_C"
+    pants: str = "/Game/LostColony/CoreBlueprints/Items/Armor/PrimalItemArmor_ArcticPants.PrimalItemArmor_ArcticPants_C"
+    shirt: str = "/Game/LostColony/CoreBlueprints/Items/Armor/PrimalItemArmor_ArcticShirt.PrimalItemArmor_ArcticShirt_C"
     all_bps = [boots, gloves, helmet, pants, shirt]
 
 class Shields:
@@ -235,9 +281,14 @@ class Armor:
     chitin: Chitin = Chitin()
     hazard: Hazard = Hazard()
     desert: Desert = Desert()
+    arctic: Arctic = Arctic()
+    cursed_tek: CursedTek = CursedTek()
+    cursed_flak: CursedFlak = CursedFlak()
+    cursed_riot: CursedRiot = CursedRiot()
 
     all_bps = misc.all_bps + tek.all_bps + scuba.all_bps + riot.all_bps + flak.all_bps + leather.all_bps + \
-        ghillie.all_bps + fur.all_bps + cloth.all_bps + chitin.all_bps + hazard.all_bps + desert.all_bps   
+        ghillie.all_bps + fur.all_bps + cloth.all_bps + chitin.all_bps + hazard.all_bps + desert.all_bps + \
+        arctic.all_bps + cursed_tek.all_bps + cursed_flak.all_bps + cursed_riot.all_bps
 
 class Utilities:
     glider: str = "/Game/Aberration/CoreBlueprints/Items/Armor/PrimalItemArmor_Glider.PrimalItemArmor_Glider_C"
@@ -273,13 +324,35 @@ class Advanced:
     fabricated_pistol: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponMachinedPistol.PrimalItem_WeaponMachinedPistol_C"
     fabricated_shotgun: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponMachinedShotgun.PrimalItem_WeaponMachinedShotgun_C"
     fabricated_sniper: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponMachinedSniper.PrimalItem_WeaponMachinedSniper_C"
+    fabricated_crossbow: str = "/Game/LostColony/Weapons/FabricatedCrossbow/PrimalItem_WeaponCrossbow_Fab.PrimalItem_WeaponCrossbow_Fab_C"
     longneck: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponOneShotRifle.PrimalItem_WeaponOneShotRifle_C"
     assault_rifle: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponRifle.PrimalItem_WeaponRifle_C"
     rocket_launcher: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponRocketLauncher.PrimalItem_WeaponRocketLauncher_C"
     tek_rifle: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_TekRifle.PrimalItem_TekRifle_C"
     chainsaw: str = "/Game/ScorchedEarth/WeaponChainsaw/PrimalItem_ChainSaw.PrimalItem_ChainSaw_C"
     flamethrower: str = "/Game/ScorchedEarth/WeaponFlamethrower/PrimalItem_WeapFlamethrower.PrimalItem_WeapFlamethrower_C"
-    all_bps = [compound_bow, fabricated_pistol, fabricated_shotgun, fabricated_sniper, longneck, assault_rifle, rocket_launcher, tek_rifle, chainsaw, flamethrower]
+    tek_spear: str = "/Game/LostColony/Weapons/TekSpear/PrimalItem_WeaponSpear_Tek.PrimalItem_WeaponSpear_Tek_C"
+    all_bps = [compound_bow, fabricated_pistol, fabricated_shotgun, fabricated_sniper, fabricated_crossbow,longneck, assault_rifle, rocket_launcher, tek_rifle, chainsaw, flamethrower, tek_spear]
+
+class CursedWeapons:
+    chainsaw: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_ChainSaw_Cursed.PrimalItem_ChainSaw_Cursed_C"
+    tek_rifle: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_TekRifle_Cursed.PrimalItem_TekRifle_Cursed_C"
+    flamethrower: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeapFlamethrower_Cursed.PrimalItem_WeapFlamethrower_Cursed_C"
+    compound_bow: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponCompoundBow_Cursed.PrimalItem_WeaponCompoundBow_Cursed_C"
+    crossbow: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponCrossbow_Cursed.PrimalItem_WeaponCrossbow_Cursed_C"
+    harpoon: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponHarpoon_Cursed.PrimalItem_WeaponHarpoon_Cursed_C"
+    fabricated_pistol: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponMachinedPistol_Cursed.PrimalItem_WeaponMachinedPistol_Cursed_C"
+    fabricated_shotgun: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponMachinedShotgun_Cursed.PrimalItem_WeaponMachinedShotgun_Cursed_C"
+    fabricated_sniper: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponMachinedSniper_Cursed.PrimalItem_WeaponMachinedSniper_Cursed_C"
+    metal_hatchet: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponMetalHatchet_Cursed.PrimalItem_WeaponMetalHatchet_Cursed_C"
+    metal_pick: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponMetalPick_Cursed.PrimalItem_WeaponMetalPick_Cursed_C"
+    longneck: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponOneShotRifle_Cursed.PrimalItem_WeaponOneShotRifle_Cursed_C"
+    pike: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponPike_Cursed.PrimalItem_WeaponPike_Cursed_C"
+    assault_rifle: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponRifle_Cursed.PrimalItem_WeaponRifle_Cursed_C"
+    sword: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponSword_Cursed.PrimalItem_WeaponSword_Cursed_C"
+    tek_sword: str = "/Game/LostColony/CoreBlueprints/Items/CursedWeapons/PrimalItem_WeaponTekSword_Cursed.PrimalItem_WeaponTekSword_Cursed_C"
+
+    all_bps = [chainsaw, tek_rifle, flamethrower, compound_bow, crossbow, harpoon, fabricated_pistol, fabricated_shotgun, fabricated_sniper, metal_hatchet, metal_pick, longneck, pike, assault_rifle, sword, tek_sword]
 
 class Throwables:
     gas_grenade: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_GasGrenade.PrimalItem_GasGrenade_C"
@@ -289,7 +362,8 @@ class Throwables:
     grenade: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponGrenade.PrimalItem_WeaponGrenade_C"
     bola: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponBola.PrimalItem_WeaponBola_C"
     spear: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponSpear.PrimalItem_WeaponSpear_C"
-    all_bps = [gas_grenade, poison_grenade, tek_grenade, c4, grenade, bola, spear]
+    tek_gravity_grenade: str = "/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponTekGravityGrenade.PrimalItem_WeaponTekGravityGrenade_C"
+    all_bps = [gas_grenade, poison_grenade, tek_grenade, c4, grenade, bola, spear, tek_gravity_grenade]
 
 class Misc:
     climb_pick: str = "/Game/Aberration/CoreBlueprints/Weapons/PrimalItem_WeaponClimbPick.PrimalItem_WeaponClimbPick_C"
@@ -308,6 +382,7 @@ class Misc:
     spray_paint: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponSprayPaint.PrimalItem_WeaponSprayPaint_C"
     tripwire_c4: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponTripwireC4.PrimalItem_WeaponTripwireC4_C"
     fists: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/WeapFists.WeapFists_C"
+    taxidermy_tool: str = "/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponTaxidermyTool.PrimalItem_WeaponTaxidermyTool_C"
     
     paintbrush: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponPaintbrush.PrimalItem_WeaponPaintbrush_C"
     scissors: str = "/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponScissors.PrimalItem_WeaponScissors_C"
@@ -348,8 +423,9 @@ class Weapons:
     gathering: Gathering = Gathering()
     primitive: Primitive = Primitive()
     advanced: Advanced = Advanced()
+    cursed: CursedWeapons = CursedWeapons()
 
-    all_bps = gathering.all_bps + primitive.all_bps + advanced.all_bps 
+    all_bps = gathering.all_bps + primitive.all_bps + advanced.all_bps + cursed.all_bps
 
 class Mek:
     shield: str = "/Game/Extinction/CoreBlueprints/Items/Saddle/PrimalItemArmor_MekBackpack_Shield.PrimalItemArmor_MekBackpack_Shield_C"

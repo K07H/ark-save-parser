@@ -52,6 +52,14 @@ class ArkDinoTrait(Enum):
     COLD = "Cold"
     CAREFREE = "Carefree"
     INHERIT_MELEE_MUTABLE = "InheritMeleeMutable"
+    IRONHIDE = "Ironhide"
+    PACK_MULE = "PackMule"
+    SHARPSHOOTER = "Sharpshooter"
+    SWIFT = "Swift"
+    EFFICIENT = "Efficient"
+    BLOODTHIRSTY = "Bloodthirsty"
+    BEASTMASTER = "Beastmaster"
+    BULWARK = "Bulwark"
 
     def from_string(value: str) -> "ArkDinoTrait":
         if "[" in value:
@@ -62,3 +70,6 @@ class ArkDinoTrait(Enum):
                 return trait
                 
         raise ValueError(f"Trait {value} not found")
+    
+    def __str__(self):
+        return self.value

@@ -1,0 +1,23 @@
+{
+    "0": "/Game/Packs/Wasteland/CoreBlueprints/ItemTraits/Items/PrimalItem_ItemTrait_Gun_Ricochet_Lesser.PrimalItem_ItemTrait_Gun_Ricochet_Lesser_C",
+    "80": "ItemID",
+    "88": "StructProperty",
+    "100": "ItemNetID",
+    "112": "/Script/ShooterGame",
+    "129": "ItemID1",
+    "137": "UInt32Property",
+    "158": "ItemID2",
+    "166": "UInt32Property",
+    "187": "None",
+    "195": "OriginalItemDropLocation",
+    "203": "StructProperty",
+    "215": "Vector",
+    "227": "/Script/CoreUObject",
+    "268": "OwnerInventory",
+    "276": "ObjectProperty",
+    "311": "LastAutoDurabilityDecreaseTime",
+    "319": "DoubleProperty",
+    "344": "ItemVersion",
+    "352": "ByteProperty",
+    "370": "None"
+}

@@ -89,7 +89,7 @@ class ArkCharacterStats:
     engram_points: int = 0
     explorer_notes: List[int] = field(default_factory=list)
     emotes: List[str] = field(default_factory=list)
-    engrams: List[str] = field(default_factory=list)
+    engrams: List[ObjectReference] = field(default_factory=list)
     stats: ArkStatPoints = field(default_factory=lambda: ArkStatPoints([]))
 
     def __init__(self, properties: ArkPropertyContainer):

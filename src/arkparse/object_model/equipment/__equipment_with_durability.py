@@ -20,7 +20,7 @@ class EquipmentWithDurability(Equipment):
             return 50
         elif bp in ArmorBps.ghillie.all_bps or bp in ArmorBps.leather.all_bps or bp in ArmorBps.desert.all_bps:
             return 45
-        elif bp in ArmorBps.fur.all_bps:
+        elif bp in ArmorBps.fur.all_bps or bp in ArmorBps.arctic.all_bps or bp:
             return 125
         elif bp in ArmorBps.cloth.all_bps:
             return 25
@@ -59,7 +59,7 @@ class EquipmentWithDurability(Equipment):
             return 10
         elif bp == Weapons.primitive.bow:
             return 50
-        elif bp == Weapons.primitive.crossbow:
+        elif bp == Weapons.primitive.crossbow or bp == Weapons.advanced.fabricated_crossbow:
             return 100
         elif bp == Misc.harpoon:
             return 100
@@ -118,7 +118,7 @@ class EquipmentWithDurability(Equipment):
             raise ValueError(f"Stat {stat} is not valid for {self.class_name}")
         
     def __str__(self):
-        return f"dura: {self.durability:.2f} -" + super().__str__()
+        return f"dura: {int(self.durability)} -" + super().__str__()
         
     def get_actual_value(self, stat: ArkEquipmentStat, internal_value: int) -> float:
         if stat == ArkEquipmentStat.DURABILITY:

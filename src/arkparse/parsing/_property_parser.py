@@ -84,8 +84,8 @@ class PropertyParser(BaseValueValidator):
         self.validate_name(property_name)
         self.validate_name("NameProperty")
         self.validate_uint32(0)
-        self.validate_byte(0x08)
-        self.validate_uint32(0)
+        self.read_uint32()  # Length of the name + length + this byte?
+        self.validate_byte(0)
         value = self.read_name()
         return value
     

@@ -34,6 +34,8 @@ from arkparse.parsing.struct.ark_painting_key_value import ArkPaintingKeyValue
 from arkparse.parsing.struct.ark_dino_order_id import ArkDinoOrderID
 from arkparse.parsing.struct.ark_tribe_alliance import ArkTribeAlliance
 from arkparse.parsing.struct.ark_tribe_rank_group import ArkTribeRankGroup
+from arkparse.parsing.struct.ark_milestone_tree_level_and_index import ArkMilestoneTreeLevelAndIndex
+from arkparse.parsing.struct.ark_patrol_group_saved_data import ArkPatrolGroupSavedData
 
 from arkparse.parsing.ark_property_container import ArkPropertyContainer
 from arkparse.parsing.ark_set import ArkSet
@@ -62,6 +64,9 @@ def log_block(title: str):
 
 
 def log_property_read(key: str, vtype: ArkValueType, start_pos: int, data_size: int, value: Any, position: int) -> None:
+    # Fast path: check cached boolean directly (no method call overhead)
+    if not ArkSaveLogger._parser_log_enabled:
+        return
     ArkSaveLogger.parser_log(
         f"[property read: key={key}; type={vtype}; bin_pos={start_pos}; bin_size={data_size}; value={value}; index_pos={position}]"
     )
@@ -98,6 +103,8 @@ _STRUCT_READERS: Dict[ArkStructType, Callable[["ArkBinaryParser", int], Any]] = 
     ArkStructType.ArkDinoOrderID: lambda bb, ds: ArkDinoOrderID(bb),
     ArkStructType.ArkTribeAlliance: lambda bb, ds: ArkTribeAlliance(bb),
     ArkStructType.ArkTribeRankGroup: lambda bb, ds: ArkTribeRankGroup(bb),
+    ArkStructType.ArkMilestoneTreeLevelAndIndex: lambda bb, ds: ArkMilestoneTreeLevelAndIndex(bb),
+    ArkStructType.ArkPatrolGroupSavedData: lambda bb, ds: ArkPatrolGroupSavedData(bb),
 }
 
 # Flags driving how a primitive value is read
@@ -419,7 +426,6 @@ class ArkProperty:
                 ArkSaveLogger.warning_log(f"Skipping to the end of the struct, type: {array_content_type}")
                 bb.set_position(data_start_position + data_size)
                 bb.structured_print(to_default_file=True)
-                input("Press Enter to continue...")
                 ArkSaveLogger.open_hex_view(True)
 
             # if array_content_type == "PrimalCharacterStatusValueModifier":

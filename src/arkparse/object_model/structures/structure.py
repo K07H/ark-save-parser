@@ -86,6 +86,8 @@ class Structure(ParsedObjectBase):
     def heal(self):
         if self.current_health == self.max_health:
             return
+        if self.object.find_property("Health") is None:
+            return
         self.current_health = self.max_health
         self.binary.replace_float(self.object.find_property("Health"), float(self.max_health))
         self.update_binary()

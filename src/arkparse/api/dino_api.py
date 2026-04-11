@@ -1,7 +1,10 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from uuid import UUID, uuid4
 from pathlib import Path
 import os
+import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 from arkparse.object_model.cryopods.cryopod import Cryopod
 from arkparse.object_model.dinos.dino import Dino, DinoStats, DinoId
@@ -16,26 +19,46 @@ from arkparse.parsing import ArkBinaryParser
 from arkparse.saves.asa_save import AsaSave
 from arkparse.parsing import GameObjectReaderConfiguration
 from arkparse.parsing.struct.actor_transform import MapCoords, ActorTransform
-from arkparse.enums import ArkMap, ArkStat
+from arkparse.enums import ArkMap, ArkStat, ArkDinoTrait
 from arkparse.utils import TEMP_FILES_DIR, ImportFile
 from arkparse.logging import ArkSaveLogger
 from arkparse.classes.dinos import Dinos
 from arkparse.object_model.misc.inventory import Inventory
 from arkparse.object_model.misc.inventory_item import InventoryItem
 from arkparse.object_model.dinos.pedigree import Pedigree
+from arkparse.logging.ark_save_logger import mark_as_worker_thread
+
+
+def _is_parallel_enabled() -> bool:
+    """Check if parallel parsing should be enabled (GIL is disabled)."""
+    if hasattr(sys, '_is_gil_enabled'):
+        return not sys._is_gil_enabled()
+    return False
+
+
+_PARALLEL_ENABLED = _is_parallel_enabled()
+
 
 class DinoApi:
     _DEFAULT_CONFIG = GameObjectReaderConfiguration(
         blueprint_name_filter=lambda name: \
             name is not None and \
                 (("Dinos/" in name and "_Character_" in name) or \
-                ("PrimalItem_WeaponEmptyCryopod" in name or "PrimalItem_SCSCryopod" in name)))
+                ("DinoCharacterStatusComponent" in name) or \
+                ("PrimalItem_WeaponEmptyCryopod" in name or "PrimalItem_SCSCryopod" in name or "ItemDinoball.ItemDinoball_C" in name)))
 
     def __init__(self, save: AsaSave):
         self.save = save
         self.all_objects = None
         self.parsed_dinos: Dict[UUID, Dino] = {}
         self.parsed_cryopods: Dict[UUID, Cryopod] = {}
+
+    @staticmethod
+    def _create_dino(uuid: UUID, save: AsaSave, is_tamed: bool, is_baby: bool, bypass_inventory: bool = True) -> Dino:
+        if is_tamed:
+            return TamedBaby(uuid, save=save) if is_baby else TamedDino(uuid, save=save, bypass_inventory=bypass_inventory)
+        else:
+            return Baby(uuid, save=save) if is_baby else Dino(uuid, save=save)
 
     @staticmethod
     def is_applicable_bp(blueprint: str) -> bool:
@@ -66,99 +89,159 @@ class DinoApi:
         
         dino = None
         if "Dinos/" in object.blueprint and "_Character_" in object.blueprint:
-            is_tamed = object.get_property_value("TamedTimeStamp") is not None
-
             if uuid in self.parsed_dinos:
                 dino = self.parsed_dinos[uuid]
             else:
-                if is_tamed:
-                    dino = TamedDino(uuid, self.save)
-                else:
-                    dino = Dino(uuid, self.save)
+                is_tamed = object.get_property_value("TamedTimeStamp") is not None
+                is_baby = object.get_property_value("bIsBaby", False)
+                dino = DinoApi._create_dino(uuid, self.save, is_tamed, is_baby)
                 self.parsed_dinos[uuid] = dino
 
         return dino
 
-    def get_all(self, config = None, include_cryos: bool = True, include_wild: bool = True, include_tamed: bool = True, include_babies: bool = True, only_cryopodded: bool = False) -> Dict[UUID, Dino]:
+    def get_all(self, config = None, include_cryos: bool = True, include_wild: bool = True, include_tamed: bool = True, include_babies: bool = True, only_cryopodded: bool = False, max_workers: int = 6, bypass_inventory: bool = True) -> Dict[UUID, Dino]:
         ArkSaveLogger.api_log("Retrieving all dinos from save...")
 
         objects = self.get_all_objects(config)
+        
         dinos = {}
 
         if self.all_objects and len(objects) != len(self.all_objects):
             ArkSaveLogger.api_log(f"Found {len(objects)} dinos, parsing them... (and retrieving inventories)")
 
+        # Classify objects into categories for parallel processing
+        dino_objects_to_parse: List[Tuple[UUID, ArkGameObject, bool, bool]] = []  # (uuid, obj, is_tamed, is_baby)
+        cryopod_objects_to_parse: List[Tuple[UUID, ArkGameObject]] = []  # (uuid, obj)
+        
         for key, obj in objects.items():
-            try:
-                dino = None
-                if not only_cryopodded and "Dinos/" in obj.blueprint and "_Character_" in obj.blueprint:
-                    is_tamed = obj.get_property_value("TamedTimeStamp") is not None
-                    is_baby = obj.get_property_value("bIsBaby", False)
-
-                    if obj.uuid in self.parsed_dinos:
-                        if is_tamed and include_tamed:
-                            if is_baby and include_babies:
-                                dino = self.parsed_dinos[obj.uuid]
-                            else:
-                                dino = self.parsed_dinos[obj.uuid]
-                        elif not is_tamed and include_wild:
-                            if is_baby and include_babies:
-                                dino = self.parsed_dinos[obj.uuid]
-                            else:
-                                dino = self.parsed_dinos[obj.uuid]
-                    elif is_tamed and include_tamed:
-                        if is_baby and include_babies:
-                            dino = TamedBaby(obj.uuid, save=self.save)
-                        else:
-                            dino = TamedDino(obj.uuid, save=self.save)
-                        self.parsed_dinos[obj.uuid] = dino
-                    elif include_wild and not is_tamed:
-                        if is_baby and include_babies:
-                            dino = Baby(obj.uuid, save=self.save)
-                        else:
-                            dino = Dino(obj.uuid, save=self.save)
-                        self.parsed_dinos[obj.uuid] = dino
-
-                elif ("PrimalItem_SCSCryopod" in obj.blueprint or "PrimalItem_WeaponEmptyCryopod" in obj.blueprint) and include_cryos and include_tamed:
-                    if not obj.get_property_value("bIsEngram", default=False) and obj.get_property_value("CustomItemDatas") is not None:
-                        if obj.uuid in self.parsed_cryopods:
-                            is_baby = self.parsed_cryopods[obj.uuid].dino is not None and isinstance(self.parsed_cryopods[obj.uuid].dino, TamedBaby)
-                            if is_baby and include_babies:
-                                dino = self.parsed_cryopods[obj.uuid].dino
-                            else:
-                                dino = self.parsed_cryopods[obj.uuid].dino
-                            if dino is not None:
-                                self.parsed_dinos[dino.uuid] = dino
-                        else:
-                            try:
-                                cryopod = Cryopod(obj.uuid, save=self.save)
-                                self.parsed_cryopods[obj.uuid] = cryopod
-                                if cryopod.dino is not None:
-                                    dino = cryopod.dino
-                                    dino.is_cryopodded = True
-                            except Exception as e:
-                                if "Unsupported embedded data version" in str(e):
-                                    ArkSaveLogger.warning_log(f"Skipping cryopod {obj.uuid} due to unsupported embedded data version (pre Unreal 5.5)")
-                                    continue
-                                ArkSaveLogger.set_log_level(ArkSaveLogger.LogTypes.PARSER, True)
-                                cryopod = Cryopod(obj.uuid, save=self.save)
-                                ArkSaveLogger.set_log_level(ArkSaveLogger.LogTypes.PARSER, False)
-                                ArkSaveLogger.error_log(f"Error parsing cryopod {obj.uuid}: {e}")
-                                raise e
-                            finally:
-                                ArkSaveLogger.set_log_level(ArkSaveLogger.LogTypes.PARSER, False)
-                if dino is not None:
-                    dinos[key] = dino
-            except Exception as e:
-                if ArkSaveLogger._allow_invalid_objects:
-                    ArkSaveLogger.error_log(f"Failed to parse dino {obj.uuid}: {e}")
-                else:
-                    raise e
+            if not only_cryopodded and "Dinos/" in obj.blueprint and "_Character_" in obj.blueprint:
+                is_tamed = obj.get_property_value("TamedTimeStamp") is not None
+                is_baby = obj.get_property_value("bIsBaby", False)
+                
+                if obj.uuid in self.parsed_dinos:
+                    if (is_tamed and include_tamed) or (not is_tamed and include_wild):
+                        dinos[key] = self.parsed_dinos[obj.uuid]
+                elif (is_tamed and include_tamed) or (not is_tamed and include_wild):
+                    if not is_baby or include_babies:
+                        dino_objects_to_parse.append((key, obj, is_tamed, is_baby))
+            
+            elif ("PrimalItem_SCSCryopod" in obj.blueprint or "PrimalItem_WeaponEmptyCryopod" in obj.blueprint or "ItemDinoball.ItemDinoball_C" in obj.blueprint) and include_cryos and include_tamed:
+                if not obj.get_property_value("bIsEngram", default=False) and obj.get_property_value("CustomItemDatas") is not None:
+                    if obj.uuid in self.parsed_cryopods:
+                        self._collect_cached_cryopod(self.parsed_cryopods[obj.uuid], key, dinos, include_babies)
+                    else:
+                        cryopod_objects_to_parse.append((key, obj))
+        
+        # Parse dinos - parallel when GIL is disabled
+        if dino_objects_to_parse:
+            self._parse_dinos_batch(dino_objects_to_parse, dinos, max_workers, bypass_inventory)
+        
+        # Parse cryopods - parallel when GIL is disabled
+        if cryopod_objects_to_parse:
+            self._parse_cryopods_batch(cryopod_objects_to_parse, dinos, include_babies, max_workers)
 
         ArkSaveLogger.api_log(f"Parsed {len(dinos)} dinos")
 
         return dinos
-    
+
+    def _collect_cached_cryopod(self, cryopod: Cryopod, key: UUID, dinos: Dict[UUID, Dino], include_babies: bool):
+        if cryopod.dino is not None:
+            is_baby = isinstance(cryopod.dino, TamedBaby)
+            if include_babies or not is_baby:
+                dinos[key] = cryopod.dino
+                self.parsed_dinos[cryopod.dino.uuid] = cryopod.dino
+
+    def _collect_parsed_cryopod(self, cryopod: Cryopod, key: UUID, dinos: Dict[UUID, Dino], include_babies: bool):
+        self.parsed_cryopods[cryopod.uuid] = cryopod
+        if cryopod.dino is not None:
+            cryopod.dino.is_cryopodded = True
+            is_baby = isinstance(cryopod.dino, TamedBaby)
+            if include_babies or not is_baby:
+                dinos[key] = cryopod.dino
+                self.parsed_dinos[cryopod.dino.uuid] = cryopod.dino
+
+    def _parse_dinos_batch(self, dino_objects_to_parse: List[Tuple[UUID, ArkGameObject, bool, bool]], dinos: Dict[UUID, Dino], max_workers: int, bypass_inventory: bool = True):
+        if _PARALLEL_ENABLED and max_workers > 1:
+            ArkSaveLogger.api_log(f"Parsing {len(dino_objects_to_parse)} dinos with {max_workers} workers...")
+            save = self.save
+            _worker_initialized = threading.local()
+            error_count = [0]
+
+            def parse_single_dino(item):
+                if not getattr(_worker_initialized, 'done', False):
+                    mark_as_worker_thread()
+                    _worker_initialized.done = True
+                key, obj, is_tamed, is_baby = item
+                try:
+                    return (key, DinoApi._create_dino(obj.uuid, save, is_tamed, is_baby, bypass_inventory))
+                except Exception as e:
+                    error_count[0] += 1
+                    if error_count[0] <= 3:
+                        ArkSaveLogger.error_log(f"Parallel dino parse error #{error_count[0]}: {type(e).__name__}: {e}")
+                    return (key, None)
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                results = list(executor.map(parse_single_dino, dino_objects_to_parse))
+
+            for key, dino in results:
+                if dino is not None:
+                    dinos[key] = dino
+                    self.parsed_dinos[dino.uuid] = dino
+        else:
+            for key, obj, is_tamed, is_baby in dino_objects_to_parse:
+                try:
+                    dino = DinoApi._create_dino(obj.uuid, self.save, is_tamed, is_baby, bypass_inventory)
+                    dinos[key] = dino
+                    self.parsed_dinos[dino.uuid] = dino
+                except Exception as e:
+                    if ArkSaveLogger._allow_invalid_objects:
+                        ArkSaveLogger.error_log(f"Failed to parse dino {obj.uuid}: {e}")
+                    else:
+                        raise e
+
+    def _parse_cryopods_batch(self, cryopod_objects_to_parse: List[Tuple[UUID, ArkGameObject]], dinos: Dict[UUID, Dino], include_babies: bool, max_workers: int):
+        if _PARALLEL_ENABLED and max_workers > 1:
+            ArkSaveLogger.api_log(f"Parsing {len(cryopod_objects_to_parse)} cryopods with {max_workers} workers...")
+            save = self.save
+            _worker_initialized = threading.local()
+
+            def parse_single_cryopod(item):
+                if not getattr(_worker_initialized, 'done', False):
+                    mark_as_worker_thread()
+                    _worker_initialized.done = True
+                key, obj = item
+                try:
+                    return (key, Cryopod(obj.uuid, save=save), None)
+                except Exception as e:
+                    if "Unsupported embedded data version" in str(e):
+                        return (key, None, "unsupported_version")
+                    return (key, None, str(e))
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                cryo_results = list(executor.map(parse_single_cryopod, cryopod_objects_to_parse))
+
+            for key, cryopod, error in cryo_results:
+                if cryopod is not None:
+                    self._collect_parsed_cryopod(cryopod, key, dinos, include_babies)
+                elif error == "unsupported_version":
+                    ArkSaveLogger.warning_log(f"Skipping cryopod due to unsupported embedded data version (pre Unreal 5.5)")
+                elif error is not None:
+                    ArkSaveLogger.error_log(f"Error parsing cryopod: {error}")
+                    if not ArkSaveLogger._allow_invalid_objects:
+                        raise RuntimeError(f"Cryopod parse error: {error}")
+        else:
+            for key, obj in cryopod_objects_to_parse:
+                try:
+                    cryopod = Cryopod(obj.uuid, save=self.save)
+                    self._collect_parsed_cryopod(cryopod, key, dinos, include_babies)
+                except Exception as e:
+                    if "Unsupported embedded data version" in str(e):
+                        ArkSaveLogger.warning_log(f"Skipping cryopod {obj.uuid} due to unsupported embedded data version (pre Unreal 5.5)")
+                        continue
+                    ArkSaveLogger.error_log(f"Error parsing cryopod {obj.uuid}: {e}")
+                    if not ArkSaveLogger._allow_invalid_objects:
+                        raise e
+
     def get_at_location(self, map: ArkMap, coords: MapCoords, radius: float = 0.3, tamed: bool = True, untamed: bool = True) -> Dict[UUID, Dino]:
         dinos = self.get_all()
 
@@ -228,6 +311,12 @@ class DinoApi:
 
         return tamed_dinos
     
+    def get_owned_by_tribe(self, tribe_id: int, include_cryopodded: bool = True) -> Dict[UUID, TamedDino]:
+        dinos = self.get_all_tamed(include_cryopodded=include_cryopodded)
+        tribe_dinos = {k: v for k, v in dinos.items() if v.owner is not None and v.owner.target_team == tribe_id}
+
+        return tribe_dinos
+    
     def get_all_of_at_least_level(self, level: int) -> Dict[UUID, Dino]:
         dinos = self.get_all()
         level_dinos = {k: v for k, v in dinos.items() if v.stats.current_level >= level}
@@ -269,6 +358,7 @@ class DinoApi:
 
     def get_all_filtered(self, level_lower_bound: int = None, level_upper_bound: int = None, 
                          class_names: List[str] = None, 
+                         traits: List[ArkDinoTrait] = None,
                          tamed: bool = None, 
                          include_cryopodded: bool = True, only_cryopodded: bool = False, 
                          stat_minimum: int = None, stats: List[ArkStat] = None) -> Dict[UUID, Dino]:
@@ -306,6 +396,10 @@ class DinoApi:
         if class_names is not None:
             filtered_dinos = {k: v for k, v in filtered_dinos.items() if v.object.blueprint in class_names}
             ArkSaveLogger.api_log(f"Class - Filtered to {len(filtered_dinos)} dinos")
+
+        if traits is not None:
+            filtered_dinos = {k: v for k, v in filtered_dinos.items() if any(t.trait in traits for t in v.gene_traits)}
+            ArkSaveLogger.api_log(f"Traits - Filtered to {len(filtered_dinos)} dinos")
 
         if tamed is not None:
             if tamed:

@@ -5,7 +5,7 @@ from arkparse.logging import ArkSaveLogger
 class HeaderLocation:
     def __init__(self, loc_str: str):
         # Regex to match the pattern in the Part strings
-        pattern = r"^(?P<map>\w+)_(?P<grid>\w+)_L(?P<l>-?\d+)_X(?P<x>-?\d+)_Y(?P<y>-?\d+)(?:_DL(?P<dl>[A-Fa-f0-9]+))?$"
+        pattern = r"^(?P<map>\w+)_(?P<grid>\w+)_L(?P<l>-?\d+)_X(?P<x>-?\d+)_Y(?P<y>-?\d+)(?:_Z(?P<z>-?\d+))?(?:_(?:DL)?(?P<dl>[A-Fa-f0-9]+))?$"
         match = re.match(pattern, loc_str)
         
         if match:
@@ -14,17 +14,22 @@ class HeaderLocation:
             self.l = int(match.group("l"))
             self.x = int(match.group("x"))
             self.y = int(match.group("y"))
+            self.z = int(match.group("z")) if match.group("z") else None
             self.dl = int(match.group("dl"), 16) if match.group("dl") else None
         else:
-            if not loc_str.startswith("SPZ") and not loc_str.startswith("BunkerSPZV"):
+            if not loc_str.startswith("SPZ") \
+               and not loc_str.startswith("BunkerSPZV") \
+               and not loc_str.startswith("LI_") \
+               and not "_HLOD_" in loc_str:
                 ArkSaveLogger.warning_log("String format does not match expected pattern: " + loc_str)
             self.map = loc_str
             self.grid = loc_str
             self.l = 0
             self.x = 0
             self.y = 0
+            self.z = None
             self.dl = None
 
 
     def __str__(self):
-        return f"{self.map}_{self.grid}_L{self.l}_X{self.x}_Y{self.y}" + (f"_DL{self.dl:08X}" if self.dl is not None else "")
+        return f"{self.map}_{self.grid}_L{self.l}_X{self.x}_Y{self.y}" + (f"_Z{self.z}" if self.z is not None else "") + (f"_DL{self.dl:08X}" if self.dl is not None else "")

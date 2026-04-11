@@ -1,3 +1,4 @@
+/CybersStructures/Misc/AmmoBox/PrimalItemStructure_AmmoBox_CS.PrimalItemStructure_AmmoBox_CS_C
 /Game/Extinction/CoreBlueprints/Weapons/PrimalItemAmmo_CannonShell.PrimalItemAmmo_CannonShell_C
 /Game/Extinction/CoreBlueprints/Weapons/PrimalItemAmmo_RocketPod.PrimalItemAmmo_RocketPod_C
 /Game/Packs/Wasteland/CoreBlueprints/ItemTraits/Items/PrimalItem_ItemTrait_Armor_AmmoOnHit.PrimalItem_ItemTrait_Armor_AmmoOnHit_C

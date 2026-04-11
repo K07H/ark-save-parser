@@ -36,13 +36,13 @@ class EquipmentApi(GeneralApi):
 
     @staticmethod
     def bp_to_class(blueprint: str):
-        if blueprint in EqClasses.weapons.all_bps or ("/Weapons/" in blueprint):
+        if blueprint in EqClasses.weapons.all_bps or ("/Weapons/" in blueprint) or ("/CursedWeapons/" in blueprint):
             return EquipmentApi.Classes.WEAPON
-        elif blueprint in EqClasses.saddles.all_bps or ("/Saddles/" in blueprint):
+        elif blueprint in EqClasses.saddles.all_bps or ("/Saddles/" in blueprint) or ("/CursedSaddles/" in blueprint):
             return EquipmentApi.Classes.SADDLE
-        elif blueprint in EqClasses.shield.all_bps or ("/Armor/Shields/" in blueprint):
+        elif blueprint in EqClasses.shield.all_bps or ("/Armor/Shields/" in blueprint) or ("/CursedArmor/Shields/" in blueprint):
             return EquipmentApi.Classes.SHIELD
-        elif blueprint in EqClasses.armor.all_bps or ("/Armor/" in blueprint):
+        elif blueprint in EqClasses.armor.all_bps or ("/Armor/" in blueprint) or ("/CursedArmor/" in blueprint):
             return EquipmentApi.Classes.ARMOR
         else:
             return None
@@ -52,31 +52,53 @@ class EquipmentApi(GeneralApi):
         return EquipmentApi._DEFAULT_CONFIG.blueprint_name_filter(blueprint)
 
     def __get_cls_filter(self, cls: "EquipmentApi.Classes"):
+        def create_cursed_variants(list: List[str]) -> List[str]:
+            cursed_variants = []
+            for bp in list:
+                if "/Weapons/" in bp:
+                    cursed_variants.append(bp.replace("/Weapons/", "/Items/CursedWeapons/").replace(".PrimalItem", "_Cursed.PrimalItem").replace('PrimalEarth', 'LostColony').replace('Extinction', 'LostColony').replace('ScorchedEarth', 'LostColony')[:-1] + "Cursed_C")
+                elif "/Saddles/" in bp:
+                    return []
+                elif "/Armor/Shields/" in bp:
+                    cursed_variants.append(bp.replace("/Armor/Shields/", "/Items/CursedArmor/Shields/").replace(".PrimalItemArmor", "_Cursed.PrimalItemArmor").replace('PrimalEarth', 'LostColony').replace('Extinction', 'LostColony').replace('ScorchedEarth', 'LostColony')[:-1] + "Cursed_C")
+                elif "/Armor/" in bp:
+                    new = bp.replace("/Armor/", "/Items/CursedArmor/").replace(".PrimalItemArmor", "_Cursed.PrimalItemArmor").replace('PrimalEarth', 'LostColony').replace('Extinction', 'LostColony').replace('ScorchedEarth', 'LostColony')[:-1] + "Cursed_C"
+                    if "Items/Items" in new:
+                        new = new.replace("Items/Items", "Items")
+                    if "/Metal" in new:
+                        new = new.replace("/Metal", "")
+                    cursed_variants.append(new)
+
+            return cursed_variants
+        
         if cls == self.Classes.WEAPON:
-            return EqClasses.weapons.all_bps
+            return EqClasses.weapons.all_bps + create_cursed_variants(EqClasses.weapons.all_bps)
         elif cls == self.Classes.SADDLE:
             return EqClasses.saddles.all_bps
         elif cls == self.Classes.ARMOR:
-            return EqClasses.armor.all_bps
+            return EqClasses.armor.all_bps + create_cursed_variants(EqClasses.armor.all_bps)
         elif cls == self.Classes.SHIELD:
-            return EqClasses.shield.all_bps
+            return EqClasses.shield.all_bps + create_cursed_variants(EqClasses.shield.all_bps)
         else:
             return None
     
-    def get_all(self, cls: "EquipmentApi.Classes", config: GameObjectReaderConfiguration = None) -> Dict[UUID, Equipment]:
+    def get_all(self, cls: "EquipmentApi.Classes", config: GameObjectReaderConfiguration = None, max_workers: int = 6) -> Dict[UUID, Equipment]:
         def is_valid(obj: ArkGameObject):
             is_engram = obj.get_property_value("bIsEngram")
             return not is_engram
         
+        allowed = set(self.__get_cls_filter(cls))
         _config = GameObjectReaderConfiguration(
-            blueprint_name_filter=lambda name: (True if config is None else config.blueprint_name_filter(name)) and name in self.__get_cls_filter(cls)
+            blueprint_name_filter=lambda name: (True if config is None else config.blueprint_name_filter(name)) and name in allowed
         )
 
-        return super().get_all(cls, valid_filter=is_valid, config=_config)
+        return super().get_all(cls, valid_filter=is_valid, config=_config, max_workers=max_workers)
     
     def get_by_class(self, cls: "EquipmentApi.Classes", classes: List[str]) -> Dict[UUID, Equipment]:
+        allowed = set(self.__get_cls_filter(cls))
+        classes_set = set(classes)
         config = GameObjectReaderConfiguration(
-            blueprint_name_filter=lambda name: name is not None and name in classes and name in self.__get_cls_filter(cls)
+            blueprint_name_filter=lambda name: name is not None and name in classes_set and name in allowed
         )
 
         return self.get_all(cls, config)
