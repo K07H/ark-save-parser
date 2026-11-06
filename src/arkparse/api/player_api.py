@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Dict, Optional, TYPE_CHECKING
+from typing import Collection, List, Dict, Optional, Tuple, TYPE_CHECKING
 from pathlib import Path
 from uuid import UUID
 
@@ -12,6 +12,9 @@ from arkparse.parsing.game_object_reader_configuration import GameObjectReaderCo
 from arkparse.saves.save_connection import SaveConnection
 from arkparse.utils import TEMP_FILES_DIR
 from arkparse.logging import ArkSaveLogger
+
+from arkparse.player.mission_leaderboard import MissionLeaderboard, MissionLeaderboards
+from arkparse.player.genesis1_missions import MissionScore
 
 from arkparse.object_model.misc.dino_owner import DinoOwner
 from arkparse.object_model.misc.object_owner import ObjectOwner
@@ -85,14 +88,18 @@ class _TribeAndPlayerData:
             player_uuid = SaveConnection.byte_array_to_uuid(uuid_bytes)
             offset = pos - 36
 
-            next_player_data = positions[i + 1] if i + 1 < len(positions) else None
-            if not next_player_data is None:
-                last_none = self.data.find_last_byte_sequence_before(pattern, next_player_data)
-                if not last_none is None:
-                    end_pos = last_none + 4
-                    size = end_pos - offset
-                    ArkSaveLogger.api_log(f"Player UUID: {uuid_bytes.hex()}, Offset: {offset}, Size: {size}, End: {offset+size}, Next Player Data: {next_player_data}")
-                    self.player_data_pointers[player_uuid] = [uuid_bytes, offset, size+1]
+            # The record runs up to the last "None" before the next player marker;
+            # for the final player there is no next marker, so it runs to the end
+            # of the buffer. Treating that as "no boundary" used to drop the last
+            # player from the store entirely.
+            next_player_data = (positions[i + 1] if i + 1 < len(positions)
+                                else len(self.data.byte_buffer))
+            last_none = self.data.find_last_byte_sequence_before(pattern, next_player_data)
+            if not last_none is None:
+                end_pos = last_none + 4
+                size = end_pos - offset
+                ArkSaveLogger.api_log(f"Player UUID: {uuid_bytes.hex()}, Offset: {offset}, Size: {size}, End: {offset+size}, Next Player Data: {next_player_data}")
+                self.player_data_pointers[player_uuid] = [uuid_bytes, offset, size+1]
 
     def get_ark_tribe_raw_data(self, index: uuid.UUID) -> Optional[bytes]:
         pointer = self.tribe_data_pointers[index]
@@ -124,13 +131,18 @@ class PlayerApi:
         OBJECT = 0
         DINO = 1
 
-    def __init__(self, save: AsaSave, ignore_error: bool = False, no_pawns: bool = False, bypass_inventory: bool = False, pawn_objects: Optional[list[ArkGameObject]] = None, force_legacy_store: bool = False, cluster_data_dir: Optional[Path] = None):
+    def __init__(self, save: AsaSave, ignore_error: bool = False, no_pawns: bool = False, bypass_inventory: bool = False, pawn_objects: Optional[list[ArkGameObject]] = None, force_legacy_store: bool = False, cluster_data_dir: Optional[Path] = None, pawn_selected_property_names: Optional[Collection[str]] = None):
         self.players: List[ArkPlayer] = []
         self.tribes: List[ArkTribe] = []
         self.tribe_to_player_map: Dict[int, List[ArkPlayer]] = {}
+        # Older copies of a player/tribe record left behind in the store.
+        self.superseded_players = 0
+        self.superseded_tribes = 0
         self.save: AsaSave = save
         self.pawns: Optional[Dict[UUID, ArkGameObject]] = None
         self.cluster_data: Optional[Dict[str, "ClusterData"]] = {}
+        self.mission_leaderboards: Optional[MissionLeaderboards] = None
+        self.__leaderboard_tags_resolved = False
 
         self.profile_paths: List[Path] = []
         self.tribe_paths: List[Path] = []
@@ -146,7 +158,7 @@ class PlayerApi:
 
         if self.save is not None and not no_pawns:
             ArkSaveLogger.api_log(f"Retrieving player pawns")
-            self.__init_pawns()
+            self.__init_pawns(pawn_selected_property_names)
         elif pawn_objects is not None:
             self.pawns = {}
             for pawn in pawn_objects:
@@ -155,6 +167,15 @@ class PlayerApi:
 
         if self.from_store:
             self.__get_files_from_db()
+            if (len(self.data.player_data_pointers) == 0
+                    and len(self.data.tribe_data_pointers) == 0
+                    and save.save_dir is not None):
+                # The save claimed to hold the store but it is empty; the real
+                # data is in the .arkprofile/.arktribe files next to the save.
+                ArkSaveLogger.api_log(
+                    "Save store held no player or tribe data, falling back to profile/tribe files")
+                self.from_store = False
+                self.get_files_from_directory(save.save_dir)
         elif save.save_dir is not None:
             self.get_files_from_directory(save.save_dir)
 
@@ -168,6 +189,14 @@ class PlayerApi:
 
         self._get_cluster_data_from_directory(cluster_data_dir)
 
+        # Only present on maps with missions, and only when GameModeCustomBytes
+        # is not being used for the player/tribe store instead.
+        self.mission_leaderboards = MissionLeaderboards.from_save(save) if save is not None else None
+        if self.mission_leaderboards is not None:
+            ArkSaveLogger.api_log(
+                f"Found {len(self.mission_leaderboards)} mission leaderboards "
+                f"({self.mission_leaderboards.total_entries} entries)")
+
     def __del__(self):
         ArkSaveLogger.api_log("Stopping PlayerApi")
         self.players = {}
@@ -177,11 +206,12 @@ class PlayerApi:
         self.save = None
         ArkSaveLogger.api_log("PlayerApi stopped")
 
-    def __init_pawns(self):
+    def __init_pawns(self, selected_property_names: Optional[Collection[str]] = None):
         if self.save is not None:
             pawn_bps = [Player.pawn_female, Player.pawn_male]
             config = GameObjectReaderConfiguration(
                 blueprint_name_filter=lambda name: name is not None and name in pawn_bps,
+                selected_property_names=list(selected_property_names) if selected_property_names else [],
             )
             self.pawns = self.save.get_game_objects(config)
     
@@ -249,6 +279,7 @@ class PlayerApi:
         new_players: Dict[int, ArkPlayer] = {}
         new_tribes: Dict[int, ArkTribe] = {}
         new_tribe_to_player: Dict[int, List[ArkPlayer]] = {}
+        superseded_players = superseded_tribes = 0
 
         if not self.from_store:
             index: int = 0
@@ -271,6 +302,11 @@ class PlayerApi:
                 if self.ignore_error:
                     continue
                 raise e
+            # The store is append-only: re-saving a player appends a new copy and
+            # leaves the old one in place, so a later record supersedes an
+            # earlier one with the same id.
+            if parsed_player.id_ in new_players:
+                superseded_players += 1
             new_players[parsed_player.id_] = parsed_player
 
         if not self.pawns is None:
@@ -298,12 +334,16 @@ class PlayerApi:
                 else:
                     ArkSaveLogger.api_log(f"Player with ID {member_id} not found in player list")
 
+            if parsed_tribe.tribe_id in new_tribes:
+                superseded_tribes += 1
             new_tribes[parsed_tribe.tribe_id] = parsed_tribe
             new_tribe_to_player[parsed_tribe.tribe_id] = players
 
         self.players = list(new_players.values())
         self.tribes = list(new_tribes.values())
         self.tribe_to_player_map = new_tribe_to_player
+        self.superseded_players = superseded_players
+        self.superseded_tribes = superseded_tribes
 
     def __calc_stat(self, stat: List[int], stat_type: int):
         if stat_type == self.StatType.LOWEST:
@@ -515,6 +555,81 @@ class PlayerApi:
         while any(t.tribe_id == tribe_id for t in self.tribes):
             tribe_id = random.randint(min, max)
         return tribe_id
+
+    # ----------------------------------------------------------------- #
+    # Mission leaderboards                                               #
+    #                                                                    #
+    # Server-wide per-mission rankings, read from GameModeCustomBytes.   #
+    # This is a separate population from self.players: it is the         #
+    # historical record and keeps players whose profile has since been   #
+    # removed, so never treat it as a player list. See                   #
+    # player/mission_leaderboard.py.                                     #
+    # ----------------------------------------------------------------- #
+    def has_mission_leaderboards(self) -> bool:
+        return self.mission_leaderboards is not None and len(self.mission_leaderboards) > 0
+
+    def __resolve_leaderboard_tags(self):
+        """Name the boards on first use; needs the profiles, so it is not done
+        during construction."""
+        if self.__leaderboard_tags_resolved or self.mission_leaderboards is None:
+            return
+        self.__leaderboard_tags_resolved = True
+        named = self.mission_leaderboards.resolve_tags(self.players)
+        ArkSaveLogger.api_log(
+            f"Named {named}/{len(self.mission_leaderboards)} mission leaderboards "
+            f"from {len(self.players)} profiles")
+
+    def get_mission_leaderboards(self, resolve_tags: bool = True) -> List[MissionLeaderboard]:
+        """Every mission leaderboard in the save, richest first."""
+        if self.mission_leaderboards is None:
+            return []
+        if resolve_tags:
+            self.__resolve_leaderboard_tags()
+        return sorted(self.mission_leaderboards, key=lambda b: len(b.entries), reverse=True)
+
+    def get_mission_leaderboard(self, mission) -> Optional[MissionLeaderboard]:
+        """One board by mission tag (string) or mission id (int)."""
+        if self.mission_leaderboards is None:
+            return None
+        if isinstance(mission, str):
+            self.__resolve_leaderboard_tags()
+        return self.mission_leaderboards.get(mission)
+
+    def get_leaderboard_entries_of(self, player: ArkPlayer) -> List[Tuple[MissionLeaderboard, int, MissionScore]]:
+        """Every board this player appears on, as (board, rank, score).
+
+        Empty for a player who never set a score, which is the common case: most
+        profiles in a save never appear on a leaderboard at all.
+        """
+        if self.mission_leaderboards is None or player is None:
+            return []
+        self.__resolve_leaderboard_tags()
+        return self.mission_leaderboards.entries_of(str(player.unique_id))
+
+    def get_leaderboard_records_of(self, player: ArkPlayer) -> List[MissionLeaderboard]:
+        """Boards where this player holds first place."""
+        if self.mission_leaderboards is None or player is None:
+            return []
+        self.__resolve_leaderboard_tags()
+        return self.mission_leaderboards.records_of(str(player.unique_id))
+
+    def get_leaderboard_players(self) -> Dict[str, str]:
+        """Every player net id the leaderboards mention, mapped to the character
+        name recorded with their most recent score.
+
+        The name is the one they had when the score was set, which is not
+        necessarily their current profile name.
+        """
+        if self.mission_leaderboards is None:
+            return {}
+        latest: Dict[str, Tuple[float, str]] = {}
+        for board in self.mission_leaderboards:
+            for entry in board.entries:
+                seen = latest.get(entry.player_net_id)
+                stamp = entry.timestamp_utc or 0.0
+                if seen is None or stamp > seen[0]:
+                    latest[entry.player_net_id] = (stamp, entry.string_value)
+        return {net_id: name for net_id, (_, name) in latest.items()}
 
     # def add_to_player_inventory(self, player: ArkPlayer, item: ArkGameObject, save: AsaSave = None):
     #     if player is None:
