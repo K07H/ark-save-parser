@@ -1,6 +1,6 @@
 import json
 from uuid import UUID
-from typing import List, Optional
+from typing import Collection, List, Optional
 import random
 
 from arkparse.object_model.misc.__parsed_object_base import ParsedObjectBase
@@ -65,17 +65,36 @@ class Dino(ParsedObjectBase):
         super().__init_props__()
 
         self.is_female = self.object.get_property_value("bIsFemale", False)
+
+        # Special case for Lumina:
+        if hasattr(self.object, "blueprint"):
+            if "/Lumina/" in self.object.blueprint:
+                self.is_female = True
+        elif hasattr(self.object, "class_name"):
+            if "/Lumina/" in self.object.class_name:
+                self.is_female = True
+
+
         self.id_ = DinoId.from_data(self.object)
         self.gene_traits = [GeneTrait(t) for t in self.object.get_array_property_value("GeneTraits")]
         self.is_dead = self.object.get_property_value("bIsDead", False)
         self._location = ActorTransform(vector=self.object.get_property_value("SavedBaseWorldLocation"))
     
-    def __init__(self, uuid: UUID = None, save: AsaSave = None):
-        super().__init__(uuid, save=save)
+    def __init__(
+        self,
+        uuid: UUID = None,
+        save: AsaSave = None,
+        selected_property_names: Optional[Collection[str]] = None,
+    ):
+        super().__init__(uuid, save=save, selected_property_names=selected_property_names)
 
         if save is not None and self.object.get_property_value("MyCharacterStatusComponent") is not None:
             stat_uuid = self.object.get_property_value("MyCharacterStatusComponent").value
-            self.stats = DinoStats(UUID(stat_uuid), save=save)
+            self.stats = DinoStats(
+                UUID(stat_uuid),
+                save=save,
+                selected_property_names=selected_property_names,
+            )
 
         if save is not None and self.object.get_property_value("Owner") is not None:
             if self.save.is_in_db(UUID(self.object.get_property_value("Owner").value)):
@@ -232,7 +251,7 @@ class Dino(ParsedObjectBase):
                      "bIsFemale": self.is_female,
                      "ShortName": self.get_short_name(),
                      "ClassName": "dino",
-                     "ItemArchetype": self.object.blueprint }
+                     "ItemArchetype": self.object.blueprint if hasattr(self.object, "blueprint") else self.object.class_name if hasattr(self.object, "class_name") else "Unknown" }
 
         # Grab dino location if it exists
         if self._location is not None:

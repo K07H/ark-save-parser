@@ -14,6 +14,8 @@ from arkparse.enums.ark_map import ArkMap
 from arkparse.logging import ArkSaveLogger
 from arkparse.logging.ark_save_logger import mark_as_worker_thread
 
+from ._deviating_structures import _KNOWN_DEVIATING_STRUCTURE_BPS, _KNOWN_NONE_STRUCTURES
+
 
 def _is_parallel_enabled() -> bool:
     if hasattr(sys, '_is_gil_enabled'):
@@ -31,33 +33,62 @@ class StructureApi:
         self.retrieved_all = False
         self.parsed_structures = {}
 
+    @staticmethod
+    def _name_based_reader_config() -> GameObjectReaderConfiguration:
+        """Select structures by class path.
+
+        Only used as a fallback: it misses every mod structure whose class path
+        doesn't contain "Structures" (thousands of them on a modded save), which
+        is why `_default_reader_config` prefers the StructureID property.
+        """
+        return GameObjectReaderConfiguration(
+            blueprint_name_filter=lambda name: name is not None and (\
+                                               (name in _KNOWN_DEVIATING_STRUCTURE_BPS) or \
+                                               ((("Structures" in name) or (name in _KNOWN_DEVIATING_STRUCTURE_BPS)) \
+                                               and (not "PrimalItemStructure_" in name or "PrimalItemStructure_ASR" in name) \
+                                               and (not "/Skins/" in name) \
+                                               and (not "PrimalInventory" in name) \
+                                               and (not "/TreasureMap/" in name) \
+                                               and (not "PrimalItemStructureSkin" in name) \
+                                               and (not "PrimalItemResource" in name) \
+                                               and (not "/TrainCarts/" in name) \
+                                               and (not name in _KNOWN_NONE_STRUCTURES)) \
+            )
+        )
+
+    def _default_reader_config(self) -> GameObjectReaderConfiguration:
+        """Select structures by the StructureID property they all carry.
+
+        This is a raw byte-pattern scan over each object's blob, so unlike the
+        class-path filter it is mod-agnostic. The scan can match blobs that
+        merely contain the name id, so the StructureID check further down still
+        drops anything that turns out not to be a structure.
+        """
+        if self.save.save_context.get_name_id("StructureID") is None:
+            # An absent name id yields an empty pattern list, which the reader
+            # treats as "no property filter" (i.e. parse the entire save), so
+            # fall back to the class-path filter instead.
+            ArkSaveLogger.warning_log("Save has no 'StructureID' name entry, falling back to class-path structure filter")
+            return StructureApi._name_based_reader_config()
+
+        return GameObjectReaderConfiguration(property_names=["StructureID"])
+
     def get_all_objects(self, config: GameObjectReaderConfiguration = None) -> Dict[UUID, ArkGameObject]:
         if config is None:
             ArkSaveLogger.api_log("Retrieving all structure objects from save")
-            reader_config = GameObjectReaderConfiguration(
-                blueprint_name_filter=lambda name: name is not None \
-                                                   and "Structures" in name \
-                                                   and (not "PrimalItemStructure_" in name or "PrimalItemStructure_ASR" in name) \
-                                                   and not "/Skins/" in name \
-                                                   and not "PrimalInventory" in name \
-                                                   and not "/TreasureMap/" in name \
-                                                #    and not "Tileset" in name \
-                                                   and not "PrimalItemStructureSkin" in name \
-                                                   and not "PrimalItemResource" in name \
-                                                   and not "/TrainCarts/" in name \
-            )
+            reader_config = self._default_reader_config()
 
             objects = self.save.get_game_objects(reader_config)
 
-            ArkSaveLogger.api_log(f"Found {len(objects)} structure objects, now looking for containers that were missed")
-            config = GameObjectReaderConfiguration()
-            config.property_names = ["MyInventoryComponent"]
-            config.blueprint_name_filter = lambda name: name is not None and not "PlayerPawn" in name and not "/Dinos/" in name and not "Character_BP" in name
-            containers = self.save.get_game_objects(config)
-            for key, obj in containers.items():
-                if key not in objects.keys():
-                    objects[key] = obj
-            ArkSaveLogger.api_log(f"After adding containers, {len(objects)} structure objects remain")
+            # ArkSaveLogger.api_log(f"Found {len(objects)} structure objects, now looking for containers that were missed")
+            # config = GameObjectReaderConfiguration()
+            # config.property_names = ["MyInventoryComponent"]
+            # config.blueprint_name_filter = lambda name: name is not None and not "PlayerPawn" in name and not "/Dinos/" in name and not "Character_BP" in name
+            # containers = self.save.get_game_objects(config)
+            # for key, obj in containers.items():
+            #     if key not in objects.keys():
+            #         objects[key] = obj
+            # ArkSaveLogger.api_log(f"After adding containers, {len(objects)} structure objects remain")
 
             # Filter engrams out
             ArkSaveLogger.api_log("Filtering engrams out of structure list")
@@ -78,6 +109,11 @@ class StructureApi:
                 if obj.blueprint not in SKIPPED_STRUCTURE_BPS:
                     SKIPPED_STRUCTURE_BPS.append(obj.blueprint)
                     ArkSaveLogger.warning_log(f"Object {obj.uuid} ({obj.blueprint}) does not seem to be a structure, skipping bps of this type")
+                    # DEBUG: dump the skipped blueprints to a JSON next to this file
+                    # import json
+                    # from pathlib import Path
+                    # _skip_path = Path(__file__).parent / "skipped_structure_bps.json"
+                    # _skip_path.write_text(json.dumps(sorted(SKIPPED_STRUCTURE_BPS), indent=4))
                 to_remove.append(obj.uuid)
 
         for uuid in to_remove:

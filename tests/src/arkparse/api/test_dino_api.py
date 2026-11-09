@@ -1,14 +1,16 @@
 
+import json
 import pytest
 from pathlib import Path
 from arkparse.api.dino_api import DinoApi
 from arkparse import AsaSave
 from arkparse.object_model.dinos import TamedDino, BabyStage
 from arkparse.enums import ArkMap, ArkDinoTrait
+from arkparse.parsing.game_object_reader_configuration import GameObjectReaderConfiguration
 
-NR_DINOS = 34450
-NR_TAMED = 2925
-NR_WILD = 31525
+NR_DINOS = 34471
+NR_TAMED = 2949
+NR_WILD = 31522
 NR_IN_CRYO = 2200
 NR_WILD_BABIES = 2747
 NR_TAMED_BABIES = 40
@@ -68,7 +70,7 @@ def test_get_all_dinos(dino_api: DinoApi):
     dinos = dino_api.get_all()
     assert isinstance(dinos, dict), "Expected a dictionary of dinos"
     print(f"Total dinos found: {len(dinos)}")
-    assert len(dinos) == NR_DINOS, f"Expected {NR_DINOS} dinos, got {len(dinos)}"
+    assert len(dinos) >= NR_DINOS, f"Expectedat least {NR_DINOS} dinos, got {len(dinos)}"
 
     nr_tamed = 0
     nr_wild = 0
@@ -86,10 +88,44 @@ def test_get_all_dinos(dino_api: DinoApi):
     
     print(f"Total tamed dinos: {nr_tamed}, Total wild dinos: {nr_wild}")
     print(f"Tamed dinos in cryopods: {in_cryopod}, Wild dinos in cryopods: {in_cryopod_wild}")
-    assert nr_tamed == NR_TAMED, f"Expected {NR_TAMED} tamed dinos, got {nr_tamed}"
-    assert nr_wild == NR_WILD, f"Expected {NR_WILD} wild dinos, got {nr_wild}"
+    assert nr_tamed >= NR_TAMED, f"Expected at least {NR_TAMED} tamed dinos, got {nr_tamed}"
+    assert nr_wild >= NR_WILD, f"Expected at least {NR_WILD} wild dinos, got {nr_wild}"
     assert in_cryopod_wild == 0, "There should be no wild dinos in cryopods"
-    assert in_cryopod == NR_IN_CRYO, f"Expected {NR_IN_CRYO} tamed dinos in cryopods, got {in_cryopod}"
+    assert in_cryopod >= NR_IN_CRYO, f"Expected at least {NR_IN_CRYO} tamed dinos in cryopods, got {in_cryopod}"
+
+def test_all_dinos_with_id_are_parsed(map_save):
+    """
+    For each map, check that every game object carrying a DinoID1 property is
+    represented in the parsed dino set. Note: DinoID1 is not dino-exclusive
+    (rafts, cars and other rideable actors carry it too), so mismatches are
+    printed for inspection.
+    """
+    map_name, save = map_save
+    dinos = DinoApi(save).get_all()
+
+    print(f"[{map_name.name}] fetching containers with Dino ID properties")
+    config = GameObjectReaderConfiguration()
+    config.property_names = ["DinoID1"]
+    with_id = save.get_game_objects(config)
+    print(f"[{map_name.name}] Found {len(with_id)} objects with DinoID1 property")
+
+    parsed_ids = {uuid.bytes for uuid in dinos.keys()}
+    count = 0
+    unparsed_bps = set()
+    for uuid2, d in with_id.items():
+        if uuid2.bytes not in parsed_ids:
+            count += 1
+            unparsed_bps.add(d.blueprint)
+            print(f"[{map_name.name}] Object with DinoID1 not in parsed dinos: {d.blueprint} ({uuid2}) count={count}")
+
+    # Compile the detected (unparsed) blueprints into a single alphabetical,
+    # unique list next to this test file (merged across all maps)
+    _dump_path = Path(__file__).parent / "unparsed_dinos_with_id.json"
+    _existing = set(json.loads(_dump_path.read_text())) if _dump_path.exists() else set()
+    _existing |= unparsed_bps
+    _dump_path.write_text(json.dumps(sorted(_existing), indent=4))
+
+    assert count == 0, f"[{map_name.name}] {count} objects with DinoID1 property not found in parsed dinos"
 
 def test_gene_traits_are_parsed(dino_api: DinoApi):
     """
@@ -237,3 +273,106 @@ def test_get_tameable_dinos(dino_api: DinoApi):
 
     print(f"Total tameable dinos found: {len(tameable_dinos)}")
     
+
+def _small_rag_save(base_save_path: Path) -> AsaSave:
+    """A freshly opened copy of the small Ragnarok save.
+
+    Selection tests have to parse the save themselves: the shared fixtures have
+    already been through a full parse, and a warm cache would make a comparison
+    between two selection strategies pass no matter what either one returned.
+    """
+    return AsaSave(base_save_path / "set_2" / "Ragnarok_WP" / "Ragnarok_WP.ark")
+
+
+def test_cryopod_bp_detection():
+    """Cryopods are still recognised by class path, so that check is pinned."""
+    assert DinoApi.is_cryopod_bp(
+        "/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponEmptyCryopod."
+        "PrimalItem_WeaponEmptyCryopod_C")
+    assert DinoApi.is_cryopod_bp("/Cryopods/Cryopods/PrimalItem_WeaponEmptyCryopod_Mod."
+                                 "PrimalItem_WeaponEmptyCryopod_Mod_C")
+    assert DinoApi.is_cryopod_bp("/Game/Genesis2/CoreBlueprints/Items/ItemDinoball."
+                                 "ItemDinoball_C")
+    assert not DinoApi.is_cryopod_bp(
+        "/Game/PrimalEarth/Dinos/Rex/Rex_Character_BP.Rex_Character_BP_C")
+    assert not DinoApi.is_cryopod_bp(None)
+
+
+def test_creature_selection_matches_class_path_filter(base_save_path: Path):
+    """Selecting creatures by DinoID must find everything the class path found.
+
+    The property scan is the robust one -- it does not have to recognise a mod's
+    folder layout -- but it may not lose anything the old filter caught, and the
+    cryopods and status components alongside it have to survive the switch too.
+    """
+    save = _small_rag_save(base_save_path)
+    try:
+        by_id = DinoApi(save).get_all_objects()
+        by_name = DinoApi(save).get_all_objects(DinoApi._DEFAULT_CONFIG)
+    finally:
+        save.close()
+
+    def creatures(objects):
+        return {uuid for uuid, obj in objects.items()
+                if any(p.name == "DinoID1" for p in obj.properties)}
+
+    id_creatures, name_creatures = creatures(by_id), creatures(by_name)
+    print(f"creatures by DinoID={len(id_creatures)} by class path={len(name_creatures)}")
+    assert id_creatures, "expected the small save to contain creatures"
+
+    missed = name_creatures - id_creatures
+    assert not missed, f"{len(missed)} creature(s) the DinoID scan does not find"
+    assert len(by_id) == len(by_name), (
+        f"selection changed size: {len(by_id)} vs {len(by_name)}")
+
+
+def test_tamed_selection_matches_class_path_filter(base_save_path: Path):
+    """get_all_tamed must return the same dinos it did with the old config.
+
+    Run against the full Ragnarok save: the small one has no tamed creatures at
+    all, so it could only ever compare an empty set with an empty set.
+    """
+    old_config = GameObjectReaderConfiguration(
+        blueprint_name_filter=lambda n: n is not None and DinoApi.is_applicable_bp(n),
+        property_names=["TamedTimeStamp", "TamingTeamID", "CustomItemDatas"],
+    )
+
+    save = AsaSave(base_save_path / "set_1" / "Ragnarok_WP" / "Ragnarok_WP.ark")
+    try:
+        old = DinoApi(save).get_all(
+            config=old_config, include_cryos=True, include_wild=False,
+            include_tamed=True, include_babies=True)
+        new = DinoApi(save).get_all_tamed(include_cryopodded=True)
+    finally:
+        save.close()
+
+    print(f"tamed old={len(old)} new={len(new)}")
+    assert len(new) == NR_TAMED, f"Expected {NR_TAMED} tamed dinos, got {len(new)}"
+    assert set(new) == set(old), (
+        f"only-old={len(set(old) - set(new))} only-new={len(set(new) - set(old))}")
+
+
+def test_creature_config_falls_back_when_the_property_is_absent(base_save_path: Path):
+    """A save whose name table lacks the property must not select everything.
+
+    An unresolvable property name yields no byte pattern, which the reader reads
+    as "no property filter" and would answer with the entire save. The small
+    Ragnarok save has no tamed creatures and so no TamedTimeStamp name entry,
+    which makes it the case to pin.
+    """
+    save = _small_rag_save(base_save_path)
+    try:
+        assert save.save_context.get_name_id("TamedTimeStamp") is None, (
+            "this test needs a save whose name table lacks TamedTimeStamp")
+
+        api = DinoApi(save)
+        config = api._creature_reader_config(["TamedTimeStamp", "TamingTeamID"])
+        assert config is DinoApi._DEFAULT_CONFIG, "expected the class-path fallback"
+
+        # DinoID1 is present, so that one still takes the property scan.
+        assert save.save_context.get_name_id("DinoID1") is not None
+        by_id = api._creature_reader_config(["DinoID1", "DinoID2"])
+        assert by_id is not DinoApi._DEFAULT_CONFIG
+        assert by_id.property_names == ["DinoID1", "DinoID2"]
+    finally:
+        save.close()

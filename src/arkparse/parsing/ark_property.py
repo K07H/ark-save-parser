@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, TYPE_CHECKING
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Set, Tuple, TypeVar, TYPE_CHECKING
 from contextlib import contextmanager
 
 from arkparse.logging import ArkSaveLogger
@@ -107,6 +107,8 @@ _STRUCT_READERS: Dict[ArkStructType, Callable[["ArkBinaryParser", int], Any]] = 
     ArkStructType.ArkTribeRankGroup: lambda bb, ds: ArkTribeRankGroup(bb),
     ArkStructType.ArkMilestoneTreeLevelAndIndex: lambda bb, ds: ArkMilestoneTreeLevelAndIndex(bb),
     ArkStructType.ArkPatrolGroupSavedData: lambda bb, ds: ArkPatrolGroupSavedData(bb),
+    # FGuid is serialized natively as 16 raw bytes, not as a property list
+    ArkStructType.Guid: lambda bb, ds: bb.read_uuid(),
 }
 
 # Flags driving how a primitive value is read
@@ -145,6 +147,8 @@ _LOGGABLE_COMPLEX = {ArkValueType.Struct, ArkValueType.Array, ArkValueType.Map, 
 # -------------------------------------------------------------------------------------------------
 @dataclass
 class ArkProperty:
+    SKIPPED_PROPERTY: ClassVar[object] = object()
+
     name: str
     type: str
     value: Any
@@ -175,13 +179,16 @@ class ArkProperty:
     # Public API
     # ---------------------------------------------------------------------------------------------
     @staticmethod
-    def read_property(byte_buffer: "ArkBinaryParser", in_array: bool = False, struct_end: int = -1) -> Optional["ArkProperty"]:
+    def read_property(
+        byte_buffer: "ArkBinaryParser",
+        in_array: bool = False,
+        struct_end: int = -1,
+        selected_property_names: Optional[Set[str]] = None,
+    ) -> Optional["ArkProperty"]:
         name_position = byte_buffer.get_position()
         value_position = 0
-        byte_buffer.save_context.generate_unknown = True
-
-        key = byte_buffer.read_name()
-        byte_buffer.save_context.generate_unknown = False
+        with byte_buffer.save_context.unknown_names_allowed():
+            key = byte_buffer.read_name()
 
         if key is None or key == "None":
             ArkSaveLogger.parser_log("Exiting struct (None marker) (pos = " + str(byte_buffer.get_position()) + " (hex: " + hex(byte_buffer.get_position()) + "))")
@@ -205,6 +212,10 @@ class ArkProperty:
             ArkSaveLogger.parser_log(
                 f"[prop={key};  type={value_type}; bin_pos={start_data_position}; size={data_size}; index_pos={position}]"
             )
+
+        if selected_property_names is not None and key not in selected_property_names:
+            ArkProperty._skip_property_value(value_type, position, data_size, byte_buffer)
+            return ArkProperty.SKIPPED_PROPERTY
 
         # Dispatch simple/complex
         if value_type in _SIMPLE_SPECS:
@@ -285,6 +296,94 @@ class ArkProperty:
         value_position = bb.get_position()
         return ArkProperty(key, ArkValueType.Enum, position, data_size, ArkEnumValue(enum_name)), value_position
 
+    @staticmethod
+    def _skip_property_value(value_type: ArkValueType, position: int, data_size: int, bb: "ArkBinaryParser") -> None:
+        """Advance `bb` past an unwanted property's value without building it.
+
+        The win comes from Struct and Array, which otherwise construct whole object
+        graphs; those two compute the declared end offset and jump straight to it.
+        Map and Set are rare enough that a bespoke offset walk would be all risk and
+        no measurable gain, so they run the real reader and drop the result - the
+        stream position is then correct by construction. Byte does the same because
+        its enum form needs the reader's layout logic anyway.
+        """
+        if value_type in _SIMPLE_SPECS:
+            ArkProperty._skip_simple_property(value_type, position, data_size, bb)
+        elif value_type == ArkValueType.Byte:
+            ArkProperty._skip_byte_property(position, data_size, bb)
+        elif value_type == ArkValueType.Struct:
+            ArkProperty._skip_struct_property(data_size, bb)
+        elif value_type == ArkValueType.Array:
+            ArkProperty._skip_array_property(data_size, bb)
+        elif value_type == ArkValueType.Map:
+            bb.set_position(bb.get_position() - 4)
+            ArkProperty.read_map_property("_", value_type.name, position, bb, data_size)
+        elif value_type == ArkValueType.Set:
+            bb.set_position(bb.get_position() - 4)
+            ArkProperty.read_set_property("_", value_type.name, position, bb, data_size)
+        elif value_type == ArkValueType.Enum:
+            bb.skip_bytes(data_size)
+        else:
+            print(
+                f"Unsupported property type {value_type} with data size {data_size} at position {bb.get_position()}"
+            )
+
+    @staticmethod
+    def _skip_simple_property(value_type: ArkValueType, position: int, data_size: int, bb: "ArkBinaryParser") -> None:
+        spec = _SIMPLE_SPECS[value_type]
+
+        if spec.needs_unknown:
+            bb.skip_bytes(1)
+            spec.reader(bb)
+            return
+
+        if spec.needs_pos_flag:
+            is_pos = bb.read_byte() == 1
+            if is_pos:
+                bb.skip_bytes(4)
+            spec.reader(bb)
+            return
+
+        if value_type == ArkValueType.Boolean:
+            bb.skip_bytes(1)
+
+    @staticmethod
+    def _skip_byte_property(position: int, data_size: int, bb: "ArkBinaryParser") -> None:
+        ArkProperty._read_byte_property("_", position, data_size, bb)
+
+    @staticmethod
+    def _skip_struct_property(data_size: int, bb: "ArkBinaryParser") -> None:
+        bb.set_position(bb.get_position() - 8)
+        nr_of_names = bb.read_uint32()
+        bb.read_name()
+        data_size, _, _, _ = ArkProperty.__read_struct_header(
+            bb,
+            nr_of_struct_names=nr_of_names,
+        )
+        bb.set_position(bb.get_position() + data_size)
+
+    @staticmethod
+    def _skip_array_property(data_size: int, bb: "ArkBinaryParser") -> None:
+        bb.set_position(bb.get_position() - 4)
+        array_type = bb.read_name()
+        nr_of_struct_names = bb.read_int()
+
+        if array_type != "StructProperty":
+            data_size = bb.read_uint32()
+            bb.skip_bytes(1)
+            data_start_position = bb.get_position()
+            bb.set_position(data_start_position + data_size)
+            return
+
+        bb.read_name()
+        data_size, _, _, _ = ArkProperty.__read_struct_header(
+            bb,
+            in_array=True,
+            nr_of_struct_names=nr_of_struct_names,
+        )
+        data_start_position = bb.get_position() - 4
+        bb.set_position(data_start_position + data_size)
+
     # ---------------------------------------------------------------------------------------------
     # Map/Set/Array readers
     # ---------------------------------------------------------------------------------------------
@@ -298,11 +397,14 @@ class ArkProperty:
         if key_type == ArkValueType.Struct:
             value_type = bb.read_name()
         else:
-            if key_type == ArkValueType.Byte:
+            if key_type == ArkValueType.Byte and ArkValueType.from_name(bb.peek_name()) is None:
                 # Enum-keyed map (e.g. TMap<TEnumAsByte<EFoo>, ...>): the key's
                 # enum type is serialized as a descriptor block before the value
                 # type: [enum name][int][enum path][int]. Consume it so the value
-                # type is read from the correct offset.
+                # type is read from the correct offset. Some Byte-keyed maps
+                # (e.g. TMap<TEnumAsByte, Int>) omit this descriptor and store
+                # the value type directly, so only consume it when the next name
+                # isn't itself a value-type name.
                 enum_key_type = bb.read_name()
                 bb.read_int()
                 enum_key_path = bb.read_name()
@@ -342,7 +444,8 @@ class ArkProperty:
             if value_type == ArkValueType.Struct:
                 entries.append(ArkProperty.read_struct_map(key_type, bb, map_name))
             else:
-                if value_type in _SIMPLE_SPECS and key_type in _SIMPLE_SPECS:
+                _readable = lambda vt: vt in _SIMPLE_SPECS or vt == ArkValueType.Byte
+                if _readable(value_type) and _readable(key_type):
                     map_key = ArkProperty.read_property_value(key_type, bb)
                     map_value = ArkProperty.read_property_value(value_type, bb)
                     entry = ArkProperty(f"{map_key}", value_type.name, 0, 0, map_value)
